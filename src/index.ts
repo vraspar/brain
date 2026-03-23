@@ -1,15 +1,31 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { joinCommand } from './commands/join.js';
+import { pushCommand } from './commands/push.js';
+import { digestCommand } from './commands/digest.js';
+import { searchCommand } from './commands/search.js';
+import { showCommand } from './commands/show.js';
+import { listCommand } from './commands/list.js';
+import { statsCommand } from './commands/stats.js';
+import { syncCommand } from './commands/sync.js';
 
 const program = new Command();
 
 program
   .name('brain')
   .description('Team knowledge sharing CLI and MCP server')
-  .version('0.1.0');
+  .version('0.1.0')
+  .option('--format <format>', 'Output format: text or json', 'text')
+  .option('-q, --quiet', 'Suppress non-essential output');
 
-// Commands will be registered here as they are built
-// e.g. program.addCommand(initCommand);
+program.addCommand(joinCommand);
+program.addCommand(pushCommand);
+program.addCommand(digestCommand);
+program.addCommand(searchCommand);
+program.addCommand(showCommand);
+program.addCommand(listCommand);
+program.addCommand(statsCommand);
+program.addCommand(syncCommand);
 
 program.parse();
