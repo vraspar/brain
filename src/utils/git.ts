@@ -113,7 +113,7 @@ export async function pullLatest(repoPath: string): Promise<string[]> {
 export async function commitAndPush(
   repoPath: string,
   files: string[],
-  message: string,
+  commitMessage: string,
   options?: { skipPush?: boolean },
 ): Promise<{ pushed: boolean }> {
   if (files.length === 0) {
@@ -123,7 +123,7 @@ export async function commitAndPush(
   const git = createGit(repoPath);
   try {
     await git.add(files);
-    await git.commit(message);
+    await git.commit(commitMessage);
 
     if (!options?.skipPush) {
       await git.push();
@@ -131,8 +131,8 @@ export async function commitAndPush(
     }
     return { pushed: false };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to commit and push in "${repoPath}": ${msg}`);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to commit and push in "${repoPath}": ${message}`);
   }
 }
 
