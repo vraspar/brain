@@ -156,6 +156,8 @@ a:focus-visible {
   color: var(--text-secondary);
   line-height: 1.8;
   margin-bottom: 2.5rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hero-subtitle span {
