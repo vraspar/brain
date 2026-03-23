@@ -264,6 +264,7 @@ a:focus-visible {
 
 .terminal .output {
   color: var(--term-output);
+  white-space: pre;
 }
 
 .terminal .comment {
