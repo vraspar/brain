@@ -39,22 +39,25 @@ Requires Node.js 18+ and git.
 ## Quick start
 
 ```bash
-# 1. Connect to a team's brain repo
-brain join https://github.com/your-team/brain-hub.git
+# Create a new brain (first person on the team)
+brain init --name "Acme Engineering" --remote https://github.com/acme/brain-hub.git
 
-# 2. See recent entries
+# Or join an existing brain (teammates)
+brain connect https://github.com/acme/brain-hub.git
+
+# See recent entries
 brain digest
 
-# 3. Search for something
+# Search for something
 brain search "kubernetes deployment"
 
-# 4. Read a specific entry
+# Read a specific entry
 brain show k8s-deployment-guide
 
-# 5. Publish a new entry
+# Publish a new entry
 brain push --title "Docker Multi-Stage Builds" --type guide --file ./docker-guide.md
 
-# 6. Pull latest from remote
+# Pull latest from remote
 brain sync
 ```
 
@@ -62,15 +65,29 @@ brain sync
 
 All commands support `--format json` for machine-readable output and `-q, --quiet` to suppress non-essential output.
 
-### `brain join <url>`
+### `brain init`
 
-Clone a remote brain repository and configure the local environment.
+Create a new brain hub. Initializes a local git repo with directory structure, generates a README, and optionally pushes to a remote.
 
-```bash
-brain join https://github.com/your-team/brain-hub.git
+```
+brain init [--name <name>] [--remote <url>] [--author <name>]
 ```
 
-Creates `~/.brain/config.yaml` and `~/.brain/repo/`. Builds the FTS5 search index from existing entries. Detects author from `git config user.name`.
+Without `--name`, runs an interactive wizard. See [docs/commands.md](docs/commands.md) for full details.
+
+### `brain connect <url>`
+
+Join an existing brain by cloning its repository.
+
+```bash
+brain connect https://github.com/your-team/brain-hub.git
+```
+
+Creates `~/.brain/config.yaml` and `~/.brain/repo/`. Builds the FTS5 search index from existing entries. Detects author from `git config user.name`. Supports `--author` to override.
+
+### `brain join <url>`
+
+Alias for `brain connect`.
 
 ### `brain push`
 
@@ -83,7 +100,7 @@ brain push --title <title> --file <path> [--type guide|skill] [--tags <csv>] [--
 - `--title` (required): Entry title. Slugified to produce the entry ID (e.g. "Docker Tips" becomes `docker-tips`).
 - `--file` (required): Path to a markdown file containing the entry body.
 - `--type`: `guide` (default) or `skill`.
-- `--tags`: Comma-separated list. If omitted, tags are auto-detected by matching content against a built-in dictionary of ~60 tech terms (docker, kubernetes, react, typescript, etc.).
+- `--tags`: Comma-separated list. If omitted, tags are auto-detected by matching content against a built-in dictionary of 56 tech terms (docker, kubernetes, react, typescript, etc.).
 - `--summary`: Short description of the entry.
 
 The entry is written to `guides/<slug>.md` or `skills/<slug>.md`, committed with message `Add <type>: <title>`, and pushed.
@@ -237,23 +254,25 @@ View read activity stats.
 
 ## Configuration
 
-Brain stores its configuration at `~/.brain/config.yaml`. Created automatically by `brain join`.
+Brain stores its configuration at `~/.brain/config.yaml`. Created automatically by `brain init` or `brain connect`.
 
 ```yaml
 remote: "https://github.com/your-team/brain-hub.git"
 local: "/home/you/.brain/repo"
 author: "your-name"
+hubName: "Acme Engineering"
 lastSync: "2026-03-23T12:00:00.000Z"
 lastDigest: "2026-03-23T12:00:00.000Z"
 ```
 
-| Field | Description |
-|-------|-------------|
-| `remote` | Git remote URL |
-| `local` | Path to the local clone |
-| `author` | Your name (from `git config user.name`) |
-| `lastSync` | Timestamp of last `brain sync` |
-| `lastDigest` | Timestamp of last `brain digest` |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `remote` | No | Git remote URL. Absent for local-only brains. |
+| `local` | Yes | Path to the local clone |
+| `author` | Yes | Your name (from `git config user.name`) |
+| `hubName` | No | Human-readable brain name |
+| `lastSync` | No | Timestamp of last `brain sync` |
+| `lastDigest` | No | Timestamp of last `brain digest` |
 
 ## Entry format
 
@@ -322,7 +341,9 @@ src/
 ├── index.ts              # CLI entry point (Commander)
 ├── types.ts              # Shared TypeScript interfaces
 ├── commands/
-│   ├── join.ts           # brain join
+│   ├── init.ts           # brain init (interactive wizard)
+│   ├── connect.ts        # brain connect
+│   ├── join.ts           # brain join (alias for connect)
 │   ├── push.ts           # brain push (includes auto-tagger)
 │   ├── digest.ts         # brain digest
 │   ├── search.ts         # brain search
@@ -336,7 +357,7 @@ src/
 │   ├── entry.ts          # Entry parsing, serialization, scanning
 │   ├── index-db.ts       # SQLite FTS5 index (create, search, query)
 │   ├── receipts.ts       # Read receipt recording and aggregation
-│   └── repo.ts           # Git repo operations (join, sync)
+│   └── repo.ts           # Git repo operations (init, join, sync)
 ├── mcp/
 │   ├── server.ts         # MCP server setup and lifecycle
 │   ├── tools.ts          # MCP tool registrations

@@ -146,7 +146,7 @@ brain push --title <title> --file <path> [--type guide|skill] [--tags <csv>] [--
 
 ### Auto-tagging
 
-When `--tags` is omitted, Brain scans the content for known tech terms and uses up to 5 as tags. The dictionary includes approximately 60 terms: `typescript`, `javascript`, `python`, `react`, `docker`, `kubernetes`, `aws`, `terraform`, `graphql`, `rust`, `go`, and others. See `src/commands/push.ts` for the full list.
+When `--tags` is omitted, Brain scans the content for known tech terms and uses up to 5 as tags. The dictionary includes 56 terms: `typescript`, `javascript`, `python`, `react`, `docker`, `kubernetes`, `aws`, `terraform`, `graphql`, `rust`, `go`, and others. See `src/commands/push.ts` for the full list.
 
 ### Entry ID generation
 

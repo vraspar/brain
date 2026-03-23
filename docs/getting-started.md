@@ -173,7 +173,6 @@ brain sync
 ```
 ✅ Brain synced successfully.
    ✨ 2 new: guides/docker-guide.md, skills/react-patterns.md
-   Already up to date.
    Total entries indexed: 16
 ```
 
