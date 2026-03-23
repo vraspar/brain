@@ -57,6 +57,28 @@ brain push ./docs/*.md
 brain sync
 ```
 
+## Features
+
+- **12 CLI commands**: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve` (`join` as hidden alias)
+- **Flexible push**: positional file args, glob patterns (`./docs/*.md`), directory input, multi-file batch with per-file error reporting
+- **Auto-detection**: title from H1/frontmatter/filename, type from frontmatter, tags from a 56-term tech dictionary
+- **Full-text search**: SQLite FTS5 with BM25 ranking, prefix matching, contextual snippets
+- **Digest filters**: `--tag`, `--type`, `--author`, `--mine`, `--unread`, `--summary`
+- **List filters**: `--tag`, `--mine`, `--unread`
+- **Read analytics**: JSON receipt files track reads by user and source (CLI or MCP), aggregated into per-entry stats
+- **MCP server**: 5 tools + 2 resources over stdio, works with Claude, Copilot, Cursor, Windsurf
+- **Git-backed storage**: entries are markdown with YAML frontmatter, committed to a shared repo
+- **JSON output**: every command supports `--format json` for scripting and agent consumption
+- **URL security**: git option injection prevention, credential sanitization
+
+### Planned
+
+- Levenshtein fuzzy search (typo tolerance)
+- `brain edit` command (modify existing entries in-place)
+- `brain status` command (show brain health, entry counts, sync state)
+- `get_recommendations` MCP tool (proactive knowledge surfacing from context keywords)
+- `update_entry` MCP tool (partial field updates for agents)
+
 ## CLI reference
 
 All commands support `--format json` for machine-readable output and `-q, --quiet` to suppress non-essential output.
