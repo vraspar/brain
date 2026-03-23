@@ -46,16 +46,18 @@ function resolveFilePaths(args: string[]): string[] {
   const resolved: string[] = [];
   for (const arg of args) {
     if (arg.includes('*')) {
-      // Glob pattern — expand manually
+      // Glob pattern — expand, match all files (not just .md)
       const dir = path.dirname(arg);
       const pattern = path.basename(arg);
       const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
       if (fs.existsSync(dir)) {
         const files = fs.readdirSync(dir)
-          .filter((f) => regex.test(f) && f.endsWith('.md'))
+          .filter((f) => regex.test(f))
           .map((f) => path.resolve(dir, f));
         resolved.push(...files);
       }
+    } else if (!fs.existsSync(arg)) {
+      throw new Error(`File or directory not found: ${arg}`);
     } else if (fs.statSync(arg).isDirectory()) {
       // Directory — push all .md files inside
       const files = fs.readdirSync(arg)
@@ -78,13 +80,13 @@ interface PushResult {
 }
 
 /**
- * Push a single file to the brain. Returns metadata about the pushed entry.
+ * Write a single file to the brain repo. Returns metadata.
+ * Does NOT commit — caller batches commits for efficiency.
  */
-async function pushSingleFile(
+async function writeSingleEntry(
   absolutePath: string,
-  config: { local: string; author: string; remote?: string },
+  config: { local: string; author: string },
   overrides: { title?: string; type?: string; tags?: string; summary?: string },
-  format: string,
 ): Promise<PushResult> {
   if (!fs.existsSync(absolutePath)) {
     throw new Error(`File not found: ${absolutePath}`);
@@ -122,16 +124,6 @@ async function pushSingleFile(
   });
 
   const filePath = await writeEntry(config.local, entry);
-
-  // Commit (push handled after all files processed for multi-file)
-  if (config.remote) {
-    await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`);
-  } else {
-    await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`, { skipPush: true });
-    if (format !== 'json') {
-      console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
-    }
-  }
 
   await recordReceipt(config.local, entry.id, config.author, 'cli');
 
@@ -193,7 +185,7 @@ export const pushCommand = new Command('push')
 
       for (const filePath of filePaths) {
         try {
-          const result = await pushSingleFile(filePath, config, options, format);
+          const result = await writeSingleEntry(filePath, config, options);
           results.push(result);
 
           if (format !== 'json' && filePaths.length > 1) {
@@ -208,6 +200,21 @@ export const pushCommand = new Command('push')
           } else if (filePaths.length === 1) {
             throw error;
           }
+        }
+      }
+
+      // Batch commit all written entries in one commit + push
+      if (results.length > 0) {
+        const allFilePaths = results.map((r) => r.filePath);
+        const commitMsg = results.length === 1
+          ? `Add ${results[0].type}: ${results[0].title}`
+          : `Add ${results.length} entries`;
+        const skipPush = !config.remote;
+
+        await commitAndPush(config.local, allFilePaths, commitMsg, { skipPush });
+
+        if (skipPush && format !== 'json') {
+          console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
         }
       }
 
