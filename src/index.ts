@@ -24,7 +24,7 @@ program
 
 program.addCommand(initCommand);
 program.addCommand(connectCommand);
-program.addCommand(joinCommand);
+program.addCommand(joinCommand, { hidden: true });
 program.addCommand(pushCommand);
 program.addCommand(digestCommand);
 program.addCommand(searchCommand);
