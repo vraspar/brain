@@ -93,8 +93,15 @@ export const pushCommand = new Command('push')
       // Write to repo
       const filePath = await writeEntry(config.local, entry);
 
-      // Commit and push
-      await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`);
+      // Commit and push (or commit-only for local-only brains)
+      if (config.remote) {
+        await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`);
+      } else {
+        await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`, { skipPush: true });
+        if (format !== 'json') {
+          console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+        }
+      }
 
       // Rebuild index
       const entries = await scanEntries(config.local);

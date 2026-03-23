@@ -49,10 +49,12 @@ function registerPushKnowledge(server: McpServer, context: BrainMcpContext): voi
         const filePath = await writeEntry(context.config.local, entry);
 
         try {
+          const skipPush = !context.config.remote;
           await commitAndPush(
             context.config.local,
             [filePath],
             `Add ${entry.type}: ${entry.title}`,
+            { skipPush },
           );
         } catch {
           // Push may fail if no remote — entry is still written locally

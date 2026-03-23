@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { initCommand } from './commands/init.js';
 import { joinCommand } from './commands/join.js';
+import { connectCommand } from './commands/connect.js';
 import { pushCommand } from './commands/push.js';
 import { digestCommand } from './commands/digest.js';
 import { searchCommand } from './commands/search.js';
@@ -20,6 +22,8 @@ program
   .option('--format <format>', 'Output format: text or json', 'text')
   .option('-q, --quiet', 'Suppress non-essential output');
 
+program.addCommand(initCommand);
+program.addCommand(connectCommand);
 program.addCommand(joinCommand);
 program.addCommand(pushCommand);
 program.addCommand(digestCommand);

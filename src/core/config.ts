@@ -27,9 +27,14 @@ function getConfigPath(): string {
  */
 function serializeYaml(config: BrainConfig): string {
   const lines: string[] = [];
-  lines.push(`remote: "${config.remote}"`);
+  if (config.remote) {
+    lines.push(`remote: "${config.remote}"`);
+  }
   lines.push(`local: "${config.local}"`);
   lines.push(`author: "${config.author}"`);
+  if (config.hubName) {
+    lines.push(`hubName: "${config.hubName}"`);
+  }
   if (config.lastSync) {
     lines.push(`lastSync: "${config.lastSync}"`);
   }
@@ -64,9 +69,10 @@ function parseYaml(content: string): BrainConfig {
     result[key] = value;
   }
 
-  if (!result['remote'] || !result['local'] || !result['author']) {
+  if (!result['local'] || !result['author']) {
     throw new Error(
-      'Invalid brain config: missing required fields (remote, local, author). Run "brain join <url>" to set up.',
+      'Invalid brain config: missing required fields (local, author). ' +
+      'Run "brain init" or "brain connect <url>" to set up.',
     );
   }
 
@@ -74,6 +80,7 @@ function parseYaml(content: string): BrainConfig {
     remote: result['remote'],
     local: result['local'],
     author: result['author'],
+    hubName: result['hubName'],
     lastSync: result['lastSync'],
     lastDigest: result['lastDigest'],
   };
@@ -83,7 +90,7 @@ export function loadConfig(): BrainConfig {
   const configPath = getConfigPath();
 
   if (!fs.existsSync(configPath)) {
-    throw new Error(`Brain not configured. Run "brain join <url>" to connect to a team brain. Expected config at: ${configPath}`);
+    throw new Error(`Brain not configured. Run "brain init" or "brain connect <url>" to set up. Expected config at: ${configPath}`);
   }
 
   const content = fs.readFileSync(configPath, 'utf-8');

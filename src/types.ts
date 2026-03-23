@@ -28,9 +28,10 @@ export interface Receipt {
 }
 
 export interface BrainConfig {
-  remote: string; // git remote URL
+  remote?: string; // git remote URL (undefined for local-only brains)
   local: string; // local clone path
   author: string; // current user
+  hubName?: string; // human-readable brain name
   lastSync?: string; // ISO 8601
   lastDigest?: string; // ISO 8601
 }

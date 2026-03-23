@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git';
 
 function createGit(repoPath: string): SimpleGit {
@@ -20,6 +21,70 @@ export async function cloneRepo(url: string, targetPath: string, shallow = false
 }
 
 /**
+ * Initialize a new git repository at the target path.
+ * Creates the directory if it doesn't exist.
+ */
+export async function initRepo(targetPath: string): Promise<void> {
+  if (!fs.existsSync(targetPath)) {
+    fs.mkdirSync(targetPath, { recursive: true });
+  }
+  const git = simpleGit(targetPath);
+  try {
+    await git.init();
+    await git.addConfig('init.defaultBranch', 'main');
+    // Ensure we're on main (some git versions default to master)
+    const branches = await git.branchLocal();
+    if (branches.current !== 'main' && !branches.all.includes('main')) {
+      await git.checkoutLocalBranch('main');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to initialize git repository at "${targetPath}": ${message}`);
+  }
+}
+
+/**
+ * Add a named remote to the repository.
+ */
+export async function addRemote(repoPath: string, name: string, url: string): Promise<void> {
+  const git = createGit(repoPath);
+  try {
+    await git.addRemote(name, url);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to add remote "${name}" (${url}): ${message}`);
+  }
+}
+
+/**
+ * Stage all files and commit. Used for initial commit in brain init.
+ */
+export async function commitAll(repoPath: string, message: string): Promise<void> {
+  const git = createGit(repoPath);
+  try {
+    await git.add('.');
+    await git.commit(message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to commit in "${repoPath}": ${msg}`);
+  }
+}
+
+/**
+ * Push current branch to origin. Separated from commitAndPush
+ * so init can handle push failures gracefully.
+ */
+export async function pushToRemote(repoPath: string): Promise<void> {
+  const git = createGit(repoPath);
+  try {
+    await git.push(['-u', 'origin', 'main']);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to push to remote: ${message}`);
+  }
+}
+
+/**
  * Pull latest changes with fast-forward only.
  * Returns list of changed file paths.
  */
@@ -38,7 +103,8 @@ export async function commitAndPush(
   repoPath: string,
   files: string[],
   message: string,
-): Promise<void> {
+  options?: { skipPush?: boolean },
+): Promise<{ pushed: boolean }> {
   if (files.length === 0) {
     throw new Error('No files specified to commit.');
   }
@@ -47,7 +113,12 @@ export async function commitAndPush(
   try {
     await git.add(files);
     await git.commit(message);
-    await git.push();
+
+    if (!options?.skipPush) {
+      await git.push();
+      return { pushed: true };
+    }
+    return { pushed: false };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to commit and push in "${repoPath}": ${msg}`);
