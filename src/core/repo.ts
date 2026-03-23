@@ -131,11 +131,17 @@ export interface InitBrainOptions {
   author?: string;
 }
 
+export interface InitBrainResult {
+  config: BrainConfig;
+  pushFailed: boolean;
+}
+
 /**
  * Initialize a new brain hub: create repo, scaffold directories,
  * generate README, commit, optionally push to remote.
+ * Rolls back (removes repo dir) on failure to prevent stuck state.
  */
-export async function initBrain(options: InitBrainOptions): Promise<BrainConfig> {
+export async function initBrain(options: InitBrainOptions): Promise<InitBrainResult> {
   const brainDir = getBrainDir();
   const repoDir = path.join(brainDir, 'repo');
 
@@ -146,62 +152,71 @@ export async function initBrain(options: InitBrainOptions): Promise<BrainConfig>
     );
   }
 
-  // 1. Initialize git repo
-  await initRepo(repoDir);
+  try {
+    // 1. Initialize git repo
+    await initRepo(repoDir);
 
-  // 2. Create directory structure
-  for (const dir of ['guides', 'skills', '_analytics/receipts']) {
-    fs.mkdirSync(path.join(repoDir, dir), { recursive: true });
-    fs.writeFileSync(path.join(repoDir, dir, '.gitkeep'), '', 'utf-8');
-  }
-
-  // 3. Generate .gitignore
-  fs.writeFileSync(path.join(repoDir, '.gitignore'), HUB_GITIGNORE, 'utf-8');
-
-  // 4. Generate README.md
-  const readmeContent = generateHubReadme(options.name, options.remote);
-  fs.writeFileSync(path.join(repoDir, 'README.md'), readmeContent, 'utf-8');
-
-  // 5. Determine author
-  let author: string;
-  if (options.author) {
-    author = options.author;
-  } else {
-    try {
-      author = await getCurrentUser(repoDir);
-    } catch {
-      author = 'unknown';
+    // 2. Create directory structure
+    for (const dir of ['guides', 'skills', '_analytics/receipts']) {
+      fs.mkdirSync(path.join(repoDir, dir), { recursive: true });
+      fs.writeFileSync(path.join(repoDir, dir, '.gitkeep'), '', 'utf-8');
     }
-  }
 
-  // 7. Create seed getting-started guide
-  const guideContent = generateGettingStartedGuide(author);
-  fs.writeFileSync(path.join(repoDir, 'guides', 'getting-started.md'), guideContent, 'utf-8');
+    // 3. Generate .gitignore
+    fs.writeFileSync(path.join(repoDir, '.gitignore'), HUB_GITIGNORE, 'utf-8');
 
-  // 8. Initial commit
-  await commitAll(repoDir, `Initialize brain: ${options.name}`);
+    // 4. Generate README.md
+    const readmeContent = generateHubReadme(options.name, options.remote);
+    fs.writeFileSync(path.join(repoDir, 'README.md'), readmeContent, 'utf-8');
 
-  // 9. Set up remote and push (if URL provided)
-  if (options.remote) {
-    await addRemote(repoDir, 'origin', options.remote);
-    try {
-      await pushToRemote(repoDir);
-    } catch {
-      // Push failure is non-fatal — brain works locally
+    // 5. Determine author
+    let author: string;
+    if (options.author) {
+      author = options.author;
+    } else {
+      try {
+        author = await getCurrentUser(repoDir);
+      } catch {
+        author = 'unknown';
+      }
     }
+
+    // 6. Create seed getting-started guide
+    const guideContent = generateGettingStartedGuide(author);
+    fs.writeFileSync(path.join(repoDir, 'guides', 'getting-started.md'), guideContent, 'utf-8');
+
+    // 7. Initial commit
+    await commitAll(repoDir, `Initialize brain: ${options.name}`);
+
+    // 8. Set up remote and push (if URL provided)
+    let pushFailed = false;
+    if (options.remote) {
+      await addRemote(repoDir, 'origin', options.remote);
+      try {
+        await pushToRemote(repoDir);
+      } catch {
+        pushFailed = true;
+      }
+    }
+
+    // 9. Save config
+    const config: BrainConfig = {
+      remote: options.remote,
+      local: repoDir,
+      author,
+      hubName: options.name,
+      lastSync: new Date().toISOString(),
+    };
+    saveConfig(config);
+
+    return { config, pushFailed };
+  } catch (error) {
+    // Rollback: remove partially created repo so user isn't stuck
+    if (fs.existsSync(repoDir)) {
+      fs.rmSync(repoDir, { recursive: true, force: true });
+    }
+    throw error;
   }
-
-  // 10. Save config
-  const config: BrainConfig = {
-    remote: options.remote,
-    local: repoDir,
-    author,
-    hubName: options.name,
-    lastSync: new Date().toISOString(),
-  };
-  saveConfig(config);
-
-  return config;
 }
 
 /**

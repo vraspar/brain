@@ -10,7 +10,18 @@ function createGit(repoPath: string): SimpleGit {
   return simpleGit(options);
 }
 
+/**
+ * Validate a URL is not a git flag injection attempt.
+ * URLs starting with '-' would be interpreted as git options.
+ */
+function validateUrl(url: string): void {
+  if (url.startsWith('-')) {
+    throw new Error(`Invalid URL "${url}". URLs must not start with "-".`);
+  }
+}
+
 export async function cloneRepo(url: string, targetPath: string, shallow = false): Promise<void> {
+  validateUrl(url);
   const options = shallow ? ['--depth', '1'] : [];
   try {
     await simpleGit().clone(url, targetPath, options);
@@ -46,6 +57,7 @@ export async function initRepo(targetPath: string): Promise<void> {
  * Add a named remote to the repository.
  */
 export async function addRemote(repoPath: string, name: string, url: string): Promise<void> {
+  validateUrl(url);
   const git = createGit(repoPath);
   try {
     await git.addRemote(name, url);

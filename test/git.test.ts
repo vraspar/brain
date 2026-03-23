@@ -81,6 +81,11 @@ describe('cloneRepo', () => {
     const target = path.join(tempDir, 'invalid-clone');
     await expect(cloneRepo('not-a-valid-repo-url', target)).rejects.toThrow('Failed to clone');
   });
+
+  it('rejects URLs starting with dash (flag injection)', async () => {
+    const target = path.join(tempDir, 'injection-clone');
+    await expect(cloneRepo('--upload-pack=evil', target)).rejects.toThrow('must not start with "-"');
+  });
 });
 
 describe('pullLatest', () => {
@@ -222,6 +227,15 @@ describe('addRemote', () => {
     await expect(
       addRemote(repoDir, 'origin', 'https://example.com/b.git'),
     ).rejects.toThrow('Failed to add remote');
+  });
+
+  it('rejects URLs starting with dash (flag injection)', async () => {
+    const repoDir = path.join(tempDir, 'inject-remote');
+    await initRepo(repoDir);
+
+    await expect(
+      addRemote(repoDir, 'origin', '--upload-pack=evil'),
+    ).rejects.toThrow('must not start with "-"');
   });
 });
 

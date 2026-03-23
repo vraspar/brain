@@ -64,7 +64,7 @@ export const initCommand = new Command('init')
         console.log(chalk.dim(`Creating brain "${name}"...`));
       }
 
-      const config = await initBrain({ name, remote, author: options.author });
+      const { config, pushFailed } = await initBrain({ name, remote, author: options.author });
 
       // Build search index with seed content
       const entries = await scanEntries(config.local);
@@ -82,6 +82,7 @@ export const initCommand = new Command('init')
           local: config.local,
           remote: config.remote ?? null,
           author: config.author,
+          pushFailed,
         }, null, 2));
       } else {
         console.log(chalk.green(`✅ Brain "${name}" is ready!${config.remote ? '' : ' (local-only)'}`));
@@ -91,7 +92,10 @@ export const initCommand = new Command('init')
         }
         console.log(chalk.dim(`   Author: ${config.author}`));
 
-        if (config.remote) {
+        if (pushFailed) {
+          console.log('');
+          console.log(chalk.yellow(`   ⚠ Created locally but failed to push to remote. Run "brain sync" to retry.`));
+        } else if (config.remote) {
           console.log('');
           console.log(chalk.bold('   📋 Share this with your team:'));
           console.log(chalk.cyan(`      brain connect ${config.remote}`));
