@@ -174,14 +174,14 @@ export async function initBrain(options: InitBrainOptions): Promise<BrainConfig>
     }
   }
 
-  // 6. Create seed getting-started guide
+  // 7. Create seed getting-started guide
   const guideContent = generateGettingStartedGuide(author);
   fs.writeFileSync(path.join(repoDir, 'guides', 'getting-started.md'), guideContent, 'utf-8');
 
-  // 6. Initial commit
+  // 8. Initial commit
   await commitAll(repoDir, `Initialize brain: ${options.name}`);
 
-  // 7. Set up remote and push (if URL provided)
+  // 9. Set up remote and push (if URL provided)
   if (options.remote) {
     await addRemote(repoDir, 'origin', options.remote);
     try {
@@ -191,7 +191,7 @@ export async function initBrain(options: InitBrainOptions): Promise<BrainConfig>
     }
   }
 
-  // 8. Save config
+  // 10. Save config
   const config: BrainConfig = {
     remote: options.remote,
     local: repoDir,

@@ -3,12 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  addRemote,
   cloneRepo,
+  commitAll,
   commitAndPush,
   getCurrentUser,
   getLastCommitDate,
   getRemoteUrl,
+  initRepo,
   pullLatest,
+  pushToRemote,
 } from '../src/utils/git.js';
 
 // We test git utility functions against real temporary git repos
@@ -155,5 +159,135 @@ describe('getRemoteUrl', () => {
     const url = await getRemoteUrl(workDir);
     // Normalize path separators for cross-platform comparison
     expect(url.replace(/\\/g, '/')).toContain(bareDir.replace(/\\/g, '/'));
+  });
+});
+
+describe('initRepo', () => {
+  it('initializes a new git repository', async () => {
+    const repoDir = path.join(tempDir, 'new-repo');
+    await initRepo(repoDir);
+
+    expect(fs.existsSync(repoDir)).toBe(true);
+    expect(fs.existsSync(path.join(repoDir, '.git'))).toBe(true);
+  });
+
+  it('creates the directory if it does not exist', async () => {
+    const repoDir = path.join(tempDir, 'nested', 'deep', 'repo');
+    expect(fs.existsSync(repoDir)).toBe(false);
+
+    await initRepo(repoDir);
+
+    expect(fs.existsSync(repoDir)).toBe(true);
+    expect(fs.existsSync(path.join(repoDir, '.git'))).toBe(true);
+  });
+
+  it('sets branch to main', async () => {
+    const { simpleGit } = await import('simple-git');
+    const repoDir = path.join(tempDir, 'branch-test');
+    await initRepo(repoDir);
+
+    // Need a commit to have a branch
+    const git = simpleGit(repoDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+    fs.writeFileSync(path.join(repoDir, 'file.txt'), 'test', 'utf-8');
+    await git.add('.');
+    await git.commit('initial');
+
+    const branches = await git.branchLocal();
+    expect(branches.current).toBe('main');
+  });
+});
+
+describe('addRemote', () => {
+  it('adds a named remote to the repository', async () => {
+    const { simpleGit } = await import('simple-git');
+    const repoDir = path.join(tempDir, 'remote-test');
+    await initRepo(repoDir);
+
+    await addRemote(repoDir, 'origin', 'https://example.com/repo.git');
+
+    const git = simpleGit(repoDir);
+    const remotes = await git.getRemotes(true);
+    const origin = remotes.find((r) => r.name === 'origin');
+    expect(origin).toBeTruthy();
+    expect(origin!.refs.fetch).toBe('https://example.com/repo.git');
+  });
+
+  it('throws for duplicate remote name', async () => {
+    const repoDir = path.join(tempDir, 'dup-remote');
+    await initRepo(repoDir);
+    await addRemote(repoDir, 'origin', 'https://example.com/a.git');
+
+    await expect(
+      addRemote(repoDir, 'origin', 'https://example.com/b.git'),
+    ).rejects.toThrow('Failed to add remote');
+  });
+});
+
+describe('commitAll', () => {
+  it('stages all files and commits', async () => {
+    const { simpleGit } = await import('simple-git');
+    const repoDir = path.join(tempDir, 'commit-all-test');
+    await initRepo(repoDir);
+
+    const git = simpleGit(repoDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+
+    fs.writeFileSync(path.join(repoDir, 'a.txt'), 'aaa', 'utf-8');
+    fs.writeFileSync(path.join(repoDir, 'b.txt'), 'bbb', 'utf-8');
+
+    await commitAll(repoDir, 'Add files');
+
+    const log = await git.log();
+    expect(log.total).toBe(1);
+    expect(log.latest?.message).toBe('Add files');
+
+    // Both files should be tracked
+    const status = await git.status();
+    expect(status.not_added).toHaveLength(0);
+    expect(status.modified).toHaveLength(0);
+  });
+});
+
+describe('pushToRemote', () => {
+  it('pushes to origin', async () => {
+    const { simpleGit } = await import('simple-git');
+    const bareDir = path.join(tempDir, 'push-bare.git');
+    fs.mkdirSync(bareDir);
+    await simpleGit(bareDir).init(true);
+
+    const repoDir = path.join(tempDir, 'push-repo');
+    await initRepo(repoDir);
+    await addRemote(repoDir, 'origin', bareDir);
+
+    const git = simpleGit(repoDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+    fs.writeFileSync(path.join(repoDir, 'file.txt'), 'content', 'utf-8');
+    await commitAll(repoDir, 'Initial');
+
+    await pushToRemote(repoDir);
+
+    // Verify by cloning the bare repo
+    const verifyDir = path.join(tempDir, 'verify');
+    await simpleGit().clone(bareDir, verifyDir);
+    expect(fs.existsSync(path.join(verifyDir, 'file.txt'))).toBe(true);
+  });
+
+  it('throws for unreachable remote', async () => {
+    const repoDir = path.join(tempDir, 'bad-push');
+    await initRepo(repoDir);
+    await addRemote(repoDir, 'origin', 'https://example.com/nonexistent.git');
+
+    const { simpleGit } = await import('simple-git');
+    const git = simpleGit(repoDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+    fs.writeFileSync(path.join(repoDir, 'f.txt'), 'x', 'utf-8');
+    await commitAll(repoDir, 'Init');
+
+    await expect(pushToRemote(repoDir)).rejects.toThrow('Failed to push');
   });
 });

@@ -31,7 +31,6 @@ export async function initRepo(targetPath: string): Promise<void> {
   const git = simpleGit(targetPath);
   try {
     await git.init();
-    await git.addConfig('init.defaultBranch', 'main');
     // Ensure we're on main (some git versions default to master)
     const branches = await git.branchLocal();
     if (branches.current !== 'main' && !branches.all.includes('main')) {
