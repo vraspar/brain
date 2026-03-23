@@ -9,7 +9,7 @@ import type { Entry } from '../types.js';
 interface ListOptions {
   type?: string;
   author?: string;
-  tag?: string;
+  tag?: string[];
   mine?: boolean;
   unread?: boolean;
 }
@@ -18,7 +18,7 @@ export const listCommand = new Command('list')
   .description('List all entries in the team brain')
   .option('--type <type>', 'Filter by type: guide or skill')
   .option('--author <author>', 'Filter by author name')
-  .option('--tag <tag>', 'Filter by tag')
+  .option('--tag <tag...>', 'Filter by tag (repeatable)')
   .option('--mine', 'Show only your own entries')
   .option('--unread', 'Show only entries you have not read')
   .action(async (options: ListOptions) => {
@@ -48,9 +48,10 @@ export const listCommand = new Command('list')
         }
 
         // Apply tag filter
-        if (options.tag) {
+        if (options.tag?.length) {
+          const filterTags = new Set(options.tag.map((t) => t.toLowerCase()));
           entries = entries.filter((e) =>
-            e.tags.some((t) => t.toLowerCase() === options.tag!.toLowerCase()),
+            e.tags.some((t) => filterTags.has(t.toLowerCase())),
           );
         }
 
