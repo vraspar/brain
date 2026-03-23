@@ -17,7 +17,7 @@ const program = new Command();
 
 program
   .name('brain')
-  .description('Team knowledge sharing CLI and MCP server')
+  .description('CLI-first knowledge sharing for dev teams')
   .version('0.1.0')
   .option('--format <format>', 'Output format: text or json', 'text')
   .option('-q, --quiet', 'Suppress non-essential output');

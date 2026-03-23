@@ -1,7 +1,7 @@
 {
   "name": "@team/brain",
   "version": "0.1.0",
-  "description": "Team knowledge sharing CLI and MCP server",
+  "description": "CLI-first knowledge sharing for dev teams",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
