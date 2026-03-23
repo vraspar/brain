@@ -54,6 +54,28 @@ describe('saveConfig and loadConfig', () => {
     expect(loaded.lastDigest).toBe(fullConfig.lastDigest);
   });
 
+  it('handles optional remote (local-only brain)', () => {
+    const localOnlyConfig: BrainConfig = {
+      local: '/home/user/.brain/repo',
+      author: 'bob',
+    };
+    saveConfig(localOnlyConfig);
+    const loaded = loadConfig();
+    expect(loaded.remote).toBeUndefined();
+    expect(loaded.local).toBe(localOnlyConfig.local);
+    expect(loaded.author).toBe(localOnlyConfig.author);
+  });
+
+  it('preserves hubName field', () => {
+    const configWithHub: BrainConfig = {
+      ...testConfig,
+      hubName: 'my-team-brain',
+    };
+    saveConfig(configWithHub);
+    const loaded = loadConfig();
+    expect(loaded.hubName).toBe('my-team-brain');
+  });
+
   it('throws when config file does not exist', () => {
     expect(() => loadConfig()).toThrow('Brain not configured');
   });
