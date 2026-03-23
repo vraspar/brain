@@ -180,3 +180,61 @@ export function createEntry(opts: CreateEntryOptions): Entry {
     related_tools: opts.related_tools,
   };
 }
+
+/**
+ * Extract title from markdown content.
+ * Tries: (1) YAML frontmatter 'title', (2) first H1 heading, (3) first non-empty line, (4) null.
+ */
+export function extractTitle(content: string): string | null {
+  const parsed = matter(content);
+  if (parsed.data['title']) return String(parsed.data['title']);
+
+  // Try first H1 heading
+  const h1Match = parsed.content.match(/^#\s+(.+)$/m);
+  if (h1Match) return h1Match[1].trim();
+
+  // Try first non-empty line
+  const firstLine = parsed.content.split('\n').find((line) => line.trim().length > 0);
+  if (firstLine) return firstLine.trim();
+
+  return null;
+}
+
+/**
+ * Derive a title from a filename.
+ * Example: "docker-deployment-guide.md" → "docker deployment guide"
+ */
+export function titleFromFilename(filePath: string): string {
+  const basename = path.basename(filePath, path.extname(filePath));
+  return basename.replace(/[-_]/g, ' ');
+}
+
+/**
+ * Parse content that may or may not have frontmatter.
+ * Returns extracted fields with nulls for missing values.
+ */
+export interface ParsedInput {
+  title: string | null;
+  type: EntryType | null;
+  tags: string[] | null;
+  summary: string | null;
+  content: string;
+}
+
+export function parseInputContent(raw: string): ParsedInput {
+  const parsed = matter(raw);
+  const data = parsed.data as Record<string, unknown>;
+
+  const hasFrontmatter = Object.keys(data).length > 0;
+
+  const type = data['type'] ? String(data['type']) : null;
+  const validType = type === 'guide' || type === 'skill' ? type : null;
+
+  return {
+    title: data['title'] ? String(data['title']) : null,
+    type: validType,
+    tags: Array.isArray(data['tags']) ? data['tags'].map(String) : null,
+    summary: data['summary'] ? String(data['summary']) : null,
+    content: hasFrontmatter ? parsed.content.trim() : raw,
+  };
+}

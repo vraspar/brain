@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import type { Entry } from '../types.js';
+import type { Entry, SearchResult } from '../types.js';
 
 /**
  * Returns the default path for the brain cache database: ~/.brain/cache.db
@@ -118,20 +118,34 @@ function sanitizeFtsQuery(query: string): string {
 
   if (cleaned.length === 0) return '';
 
-  // Wrap each term in double quotes to prevent FTS5 interpretation
-  return cleaned.map((term) => `"${term}"`).join(' ');
+  // Wrap each term in double quotes with * suffix for prefix matching
+  // "kube"* matches "kubernetes", "docker"* matches "dockerfile"
+  return cleaned.map((term) => `"${term}"*`).join(' ');
 }
 
 export function searchEntries(db: Database.Database, query: string, limit = 20): Entry[] {
+  return searchEntriesWithSnippets(db, query, limit).map((r) => r.entry);
+}
+
+/**
+ * Search entries using FTS5 with BM25 ranking, returning contextual snippets.
+ * Uses FTS5's snippet() function for matches, or extracts context manually
+ * from content for LIKE fallback results.
+ */
+export function searchEntriesWithSnippets(
+  db: Database.Database,
+  query: string,
+  limit = 20,
+): SearchResult[] {
   if (!query.trim()) return [];
 
   const sanitized = sanitizeFtsQuery(query);
   if (!sanitized) return [];
 
-  // Try FTS5 search first, fall back to LIKE if it fails
+  // Try FTS5 search with snippet extraction
   try {
     const stmt = db.prepare(`
-      SELECT e.*
+      SELECT e.*, snippet(entries_fts, 2, '«', '»', '...', 15) AS snippet
       FROM entries e
       JOIN entries_fts fts ON e.rowid = fts.rowid
       WHERE entries_fts MATCH @query
@@ -139,10 +153,13 @@ export function searchEntries(db: Database.Database, query: string, limit = 20):
       LIMIT @limit
     `);
 
-    const rows = stmt.all({ query: sanitized, limit }) as EntryRow[];
-    return rows.map(rowToEntry);
+    const rows = stmt.all({ query: sanitized, limit }) as (EntryRow & { snippet: string })[];
+    return rows.map((row) => ({
+      entry: rowToEntry(row),
+      snippet: row.snippet || buildSnippet(row.content, query),
+    }));
   } catch {
-    // FTS5 query failed — fall back to LIKE search on title and content
+    // FTS5 failed — fall back to LIKE search with manual snippet extraction
     const likeQuery = `%${query.replace(/[%_]/g, '')}%`;
     const stmt = db.prepare(`
       SELECT * FROM entries
@@ -152,8 +169,39 @@ export function searchEntries(db: Database.Database, query: string, limit = 20):
     `);
 
     const rows = stmt.all({ query: likeQuery, limit }) as EntryRow[];
-    return rows.map(rowToEntry);
+    return rows.map((row) => ({
+      entry: rowToEntry(row),
+      snippet: buildSnippet(row.content, query),
+    }));
   }
+}
+
+/**
+ * Extract a snippet from content around the first occurrence of a query term.
+ * Returns the first 80 chars of content if no match found.
+ */
+function buildSnippet(content: string, query: string, maxLength = 80): string {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const contentLower = content.toLowerCase();
+
+  for (const term of terms) {
+    const cleanTerm = term.replace(/['"*]/g, '');
+    if (!cleanTerm) continue;
+
+    const idx = contentLower.indexOf(cleanTerm);
+    if (idx !== -1) {
+      const start = Math.max(0, idx - 30);
+      const end = Math.min(content.length, idx + cleanTerm.length + 50);
+      let snippet = content.slice(start, end).replace(/\s+/g, ' ').trim();
+      if (start > 0) snippet = '...' + snippet;
+      if (end < content.length) snippet = snippet + '...';
+      return snippet.slice(0, maxLength + 6); // +6 for potential ellipses
+    }
+  }
+
+  // No match found — return summary-length prefix
+  const prefix = content.replace(/\s+/g, ' ').trim();
+  return prefix.length > maxLength ? prefix.slice(0, maxLength) + '...' : prefix;
 }
 
 /**

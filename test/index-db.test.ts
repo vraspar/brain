@@ -265,6 +265,27 @@ describe('searchEntries', () => {
     const results = searchEntries(db, '+++***');
     expect(results).toEqual([]);
   });
+
+  it('matches partial words via prefix search', () => {
+    // "kube" should match "kubernetes" via prefix wildcard
+    const results = searchEntries(db, 'kube');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results.some((e) => e.id === 'k8s-deployment')).toBe(true);
+  });
+
+  it('matches prefix of title words', () => {
+    // "Fast" should match "FastAPI"
+    const results = searchEntries(db, 'Fast');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results.some((e) => e.id === 'python-fastapi')).toBe(true);
+  });
+
+  it('matches prefix of tag words', () => {
+    // "deploy" should match "deployment" tag
+    const results = searchEntries(db, 'deploy');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results.some((e) => e.id === 'k8s-deployment')).toBe(true);
+  });
 });
 
 describe('getRecentEntries', () => {

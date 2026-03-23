@@ -4,10 +4,13 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   createEntry,
+  extractTitle,
   generateEntryId,
   parseEntry,
+  parseInputContent,
   scanEntries,
   serializeEntry,
+  titleFromFilename,
   writeEntry,
 } from '../src/core/entry.js';
 import type { Entry } from '../src/types.js';
@@ -329,5 +332,80 @@ describe('createEntry', () => {
     });
     expect(entry.tags).toEqual([]);
     expect(entry.filePath).toBe('skills/minimal.md');
+  });
+});
+
+describe('extractTitle', () => {
+  it('extracts title from frontmatter', () => {
+    const content = '---\ntitle: My Guide\n---\n# Heading\nBody text.';
+    expect(extractTitle(content)).toBe('My Guide');
+  });
+
+  it('extracts title from H1 heading when no frontmatter', () => {
+    const content = '# Docker Deployment Guide\n\nHow to deploy.';
+    expect(extractTitle(content)).toBe('Docker Deployment Guide');
+  });
+
+  it('extracts first non-empty line when no H1', () => {
+    const content = 'This is the first line.\n\nMore content.';
+    expect(extractTitle(content)).toBe('This is the first line.');
+  });
+
+  it('returns null for empty content', () => {
+    expect(extractTitle('')).toBeNull();
+  });
+
+  it('prefers frontmatter title over H1', () => {
+    const content = '---\ntitle: Frontmatter Title\n---\n# H1 Title\nBody.';
+    expect(extractTitle(content)).toBe('Frontmatter Title');
+  });
+});
+
+describe('titleFromFilename', () => {
+  it('converts hyphens to spaces', () => {
+    expect(titleFromFilename('docker-deployment-guide.md')).toBe('docker deployment guide');
+  });
+
+  it('converts underscores to spaces', () => {
+    expect(titleFromFilename('my_guide_v2.md')).toBe('my guide v2');
+  });
+
+  it('handles path with directories', () => {
+    expect(titleFromFilename('/home/user/docs/my-guide.md')).toBe('my guide');
+  });
+});
+
+describe('parseInputContent', () => {
+  it('parses content with full frontmatter', () => {
+    const raw = '---\ntitle: My Guide\ntype: guide\ntags:\n  - docker\nsummary: A guide\n---\nBody text.';
+    const parsed = parseInputContent(raw);
+    expect(parsed.title).toBe('My Guide');
+    expect(parsed.type).toBe('guide');
+    expect(parsed.tags).toEqual(['docker']);
+    expect(parsed.summary).toBe('A guide');
+    expect(parsed.content).toBe('Body text.');
+  });
+
+  it('parses content without frontmatter', () => {
+    const raw = '# Plain Markdown\n\nSome content here.';
+    const parsed = parseInputContent(raw);
+    expect(parsed.title).toBeNull();
+    expect(parsed.type).toBeNull();
+    expect(parsed.tags).toBeNull();
+    expect(parsed.content).toBe(raw);
+  });
+
+  it('handles partial frontmatter (only title)', () => {
+    const raw = '---\ntitle: Just a Title\n---\nContent.';
+    const parsed = parseInputContent(raw);
+    expect(parsed.title).toBe('Just a Title');
+    expect(parsed.type).toBeNull();
+    expect(parsed.tags).toBeNull();
+  });
+
+  it('rejects invalid type values', () => {
+    const raw = '---\ntitle: Test\ntype: invalid\n---\nContent.';
+    const parsed = parseInputContent(raw);
+    expect(parsed.type).toBeNull();
   });
 });

@@ -1,10 +1,17 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createEntry, writeEntry } from '../core/entry.js';
+import {
+  createEntry,
+  extractTitle,
+  parseInputContent,
+  scanEntries,
+  titleFromFilename,
+  writeEntry,
+} from '../core/entry.js';
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
-import { scanEntries } from '../core/entry.js';
 import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
 import type { EntryType } from '../types.js';
@@ -31,17 +38,124 @@ function extractTags(content: string): string[] {
   return [...found];
 }
 
+/**
+ * Resolve file paths from arguments, supporting glob patterns.
+ * Returns an array of absolute file paths.
+ */
+function resolveFilePaths(args: string[]): string[] {
+  const resolved: string[] = [];
+  for (const arg of args) {
+    if (arg.includes('*')) {
+      // Glob pattern — expand manually
+      const dir = path.dirname(arg);
+      const pattern = path.basename(arg);
+      const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir)
+          .filter((f) => regex.test(f) && f.endsWith('.md'))
+          .map((f) => path.resolve(dir, f));
+        resolved.push(...files);
+      }
+    } else if (fs.statSync(arg).isDirectory()) {
+      // Directory — push all .md files inside
+      const files = fs.readdirSync(arg)
+        .filter((f) => f.endsWith('.md'))
+        .map((f) => path.resolve(arg, f));
+      resolved.push(...files);
+    } else {
+      resolved.push(path.resolve(arg));
+    }
+  }
+  return resolved;
+}
+
+interface PushResult {
+  id: string;
+  title: string;
+  type: string;
+  filePath: string;
+  tags: string[];
+}
+
+/**
+ * Push a single file to the brain. Returns metadata about the pushed entry.
+ */
+async function pushSingleFile(
+  absolutePath: string,
+  config: { local: string; author: string; remote?: string },
+  overrides: { title?: string; type?: string; tags?: string; summary?: string },
+  format: string,
+): Promise<PushResult> {
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`File not found: ${absolutePath}`);
+  }
+
+  const raw = fs.readFileSync(absolutePath, 'utf-8');
+  const parsed = parseInputContent(raw);
+
+  // Resolve title: flag > frontmatter > H1 > first line > filename
+  const title = overrides.title
+    ?? parsed.title
+    ?? extractTitle(raw)
+    ?? titleFromFilename(absolutePath);
+
+  // Resolve type: flag > frontmatter > default 'guide'
+  const typeStr = overrides.type ?? parsed.type ?? 'guide';
+  if (typeStr !== 'guide' && typeStr !== 'skill') {
+    throw new Error(`Invalid type "${typeStr}". Must be "guide" or "skill".`);
+  }
+
+  // Resolve tags: flag > frontmatter > auto-extract
+  const tags = overrides.tags
+    ? overrides.tags.split(',').map((t) => t.trim()).filter(Boolean)
+    : parsed.tags ?? extractTags(parsed.content);
+
+  const summary = overrides.summary ?? parsed.summary ?? undefined;
+
+  const entry = createEntry({
+    title,
+    type: typeStr as EntryType,
+    content: parsed.content,
+    author: config.author,
+    tags,
+    summary,
+  });
+
+  const filePath = await writeEntry(config.local, entry);
+
+  // Commit (push handled after all files processed for multi-file)
+  if (config.remote) {
+    await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`);
+  } else {
+    await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`, { skipPush: true });
+    if (format !== 'json') {
+      console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+    }
+  }
+
+  await recordReceipt(config.local, entry.id, config.author, 'cli');
+
+  return {
+    id: entry.id,
+    title: entry.title,
+    type: entry.type,
+    filePath,
+    tags: entry.tags,
+  };
+}
+
 export const pushCommand = new Command('push')
-  .description('Push a new entry to the team brain')
-  .option('--file <path>', 'Read content from a file')
-  .option('--title <title>', 'Entry title')
-  .option('--type <type>', 'Entry type (guide or skill)', 'guide')
-  .option('--tags <tags>', 'Comma-separated tags')
+  .description('Push entries to the team brain')
+  .argument('[files...]', 'Markdown file(s) or glob pattern (e.g., ./docs/*.md)')
+  .option('--file <path>', 'Read content from a file (alternative to positional arg)')
+  .option('--title <title>', 'Entry title (auto-detected from content if omitted)')
+  .option('--type <type>', 'Entry type: guide or skill (default: auto-detect or guide)')
+  .option('--tags <tags>', 'Comma-separated tags (auto-extracted if omitted)')
   .option('--summary <summary>', 'Short summary of the entry')
-  .action(async (options: {
+  .action(async (fileArgs: string[], options: {
     file?: string;
     title?: string;
-    type: string;
+    type?: string;
     tags?: string;
     summary?: string;
   }) => {
@@ -50,60 +164,41 @@ export const pushCommand = new Command('push')
     try {
       const config = loadConfig();
 
-      // Validate type
-      if (options.type !== 'guide' && options.type !== 'skill') {
-        throw new Error(`Invalid type "${options.type}". Must be "guide" or "skill".`);
+      // Collect file paths from positional args and --file flag
+      const filePaths: string[] = [];
+      if (fileArgs.length > 0) {
+        filePaths.push(...resolveFilePaths(fileArgs));
+      }
+      if (options.file) {
+        filePaths.push(path.resolve(options.file));
       }
 
-      // Get content
-      let content: string;
-      if (options.file) {
-        if (!fs.existsSync(options.file)) {
-          throw new Error(`File not found: ${options.file}`);
-        }
-        content = fs.readFileSync(options.file, 'utf-8');
-      } else {
+      if (filePaths.length === 0) {
         throw new Error(
-          'Content required. Use --file <path> to provide content from a file.\n' +
-          'Example: brain push --title "My Guide" --file ./guide.md',
+          'Content required. Provide a file path or glob pattern.\n' +
+          'Examples:\n' +
+          '  brain push ./guide.md\n' +
+          '  brain push ./docs/*.md\n' +
+          '  brain push --title "My Guide" --file ./guide.md',
         );
       }
 
-      // Get title
-      const title = options.title;
-      if (!title) {
-        throw new Error('Title required. Use --title "..." to provide a title.');
+      // For multi-file push, --title override only applies to single file
+      if (filePaths.length > 1 && options.title) {
+        throw new Error('--title cannot be used with multiple files. Each file\'s title is auto-detected.');
       }
 
-      // Parse or auto-generate tags
-      const tags = options.tags
-        ? options.tags.split(',').map((t) => t.trim()).filter(Boolean)
-        : extractTags(content);
+      const results: PushResult[] = [];
+      for (const filePath of filePaths) {
+        const result = await pushSingleFile(filePath, config, options, format);
+        results.push(result);
 
-      // Create entry
-      const entry = createEntry({
-        title,
-        type: options.type as EntryType,
-        content,
-        author: config.author,
-        tags,
-        summary: options.summary,
-      });
-
-      // Write to repo
-      const filePath = await writeEntry(config.local, entry);
-
-      // Commit and push (or commit-only for local-only brains)
-      if (config.remote) {
-        await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`);
-      } else {
-        await commitAndPush(config.local, [filePath], `Add ${entry.type}: ${entry.title}`, { skipPush: true });
-        if (format !== 'json') {
-          console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+        if (format !== 'json' && filePaths.length > 1) {
+          console.log(chalk.green(`  ✅ ${result.title}`));
         }
       }
 
-      // Rebuild index
+      // Rebuild index once after all files pushed
       const entries = await scanEntries(config.local);
       const db = createIndex(getDbPath());
       try {
@@ -112,24 +207,20 @@ export const pushCommand = new Command('push')
         db.close();
       }
 
-      // Record receipt
-      await recordReceipt(config.local, entry.id, config.author, 'cli');
-
       if (format === 'json') {
-        console.log(JSON.stringify({
-          status: 'pushed',
-          id: entry.id,
-          title: entry.title,
-          type: entry.type,
-          filePath,
-          tags: entry.tags,
-        }, null, 2));
+        const output = results.length === 1
+          ? { status: 'pushed', ...results[0] }
+          : { status: 'pushed', count: results.length, entries: results };
+        console.log(JSON.stringify(output, null, 2));
+      } else if (results.length === 1) {
+        const r = results[0];
+        console.log(chalk.green(`✅ Pushed: ${r.title}`));
+        console.log(chalk.dim(`   ID: ${r.id}`));
+        console.log(chalk.dim(`   Type: ${r.type}`));
+        console.log(chalk.dim(`   File: ${r.filePath}`));
+        console.log(chalk.dim(`   Tags: ${r.tags.join(', ') || 'none'}`));
       } else {
-        console.log(chalk.green(`✅ Pushed: ${entry.title}`));
-        console.log(chalk.dim(`   ID: ${entry.id}`));
-        console.log(chalk.dim(`   Type: ${entry.type}`));
-        console.log(chalk.dim(`   File: ${filePath}`));
-        console.log(chalk.dim(`   Tags: ${entry.tags.join(', ') || 'none'}`));
+        console.log(chalk.green(`✅ Pushed ${results.length} entries`));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
