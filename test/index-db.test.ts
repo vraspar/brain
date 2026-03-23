@@ -226,6 +226,23 @@ describe('searchEntries', () => {
     const results = searchEntries(db, 'testing OR deployment OR pipeline OR api', 2);
     expect(results.length).toBeLessThanOrEqual(2);
   });
+
+  it('handles special characters without crashing', () => {
+    // These should not throw FTS5 syntax errors
+    expect(() => searchEntries(db, 'C++')).not.toThrow();
+    expect(() => searchEntries(db, '"quoted text"')).not.toThrow();
+    expect(() => searchEntries(db, 'node AND react')).not.toThrow();
+    expect(() => searchEntries(db, 'test*')).not.toThrow();
+    expect(() => searchEntries(db, '(parentheses)')).not.toThrow();
+    expect(() => searchEntries(db, "it's a test")).not.toThrow();
+    expect(() => searchEntries(db, 'colon: semi;')).not.toThrow();
+  });
+
+  it('still finds results after sanitizing special characters', () => {
+    const results = searchEntries(db, '"kubernetes" deployment');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results[0].id).toBe('k8s-deployment');
+  });
 });
 
 describe('getRecentEntries', () => {
