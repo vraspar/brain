@@ -189,12 +189,25 @@ export const pushCommand = new Command('push')
       }
 
       const results: PushResult[] = [];
-      for (const filePath of filePaths) {
-        const result = await pushSingleFile(filePath, config, options, format);
-        results.push(result);
+      const errors: { file: string; error: string }[] = [];
 
-        if (format !== 'json' && filePaths.length > 1) {
-          console.log(chalk.green(`  ✅ ${result.title}`));
+      for (const filePath of filePaths) {
+        try {
+          const result = await pushSingleFile(filePath, config, options, format);
+          results.push(result);
+
+          if (format !== 'json' && filePaths.length > 1) {
+            console.log(chalk.green(`  ✅ ${result.title}`));
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          errors.push({ file: filePath, error: message });
+
+          if (format !== 'json' && filePaths.length > 1) {
+            console.log(chalk.red(`  ✗ ${path.basename(filePath)}: ${message}`));
+          } else if (filePaths.length === 1) {
+            throw error;
+          }
         }
       }
 
@@ -208,11 +221,11 @@ export const pushCommand = new Command('push')
       }
 
       if (format === 'json') {
-        const output = results.length === 1
+        const output = results.length === 1 && errors.length === 0
           ? { status: 'pushed', ...results[0] }
-          : { status: 'pushed', count: results.length, entries: results };
+          : { status: errors.length > 0 ? 'partial' : 'pushed', succeeded: results.length, failed: errors.length, entries: results, errors };
         console.log(JSON.stringify(output, null, 2));
-      } else if (results.length === 1) {
+      } else if (results.length === 1 && errors.length === 0) {
         const r = results[0];
         console.log(chalk.green(`✅ Pushed: ${r.title}`));
         console.log(chalk.dim(`   ID: ${r.id}`));
@@ -221,6 +234,10 @@ export const pushCommand = new Command('push')
         console.log(chalk.dim(`   Tags: ${r.tags.join(', ') || 'none'}`));
       } else {
         console.log(chalk.green(`✅ Pushed ${results.length} entries`));
+        if (errors.length > 0) {
+          console.log(chalk.red(`✗ ${errors.length} file(s) failed`));
+          process.exitCode = 1;
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
