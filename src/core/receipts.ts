@@ -107,6 +107,48 @@ export function getTopEntries(repoPath: string, period: string, limit = 10): Sta
     .slice(0, limit);
 }
 
+/**
+ * Get the set of entry IDs that a specific reader has read (ever).
+ * Scans all receipt directories regardless of period.
+ */
+export function getReadEntryIds(repoPath: string, reader: string): Set<string> {
+  const receiptsBase = path.join(repoPath, RECEIPTS_DIR);
+
+  if (!fs.existsSync(receiptsBase)) {
+    return new Set();
+  }
+
+  const readIds = new Set<string>();
+
+  const dateDirs = fs.readdirSync(receiptsBase).filter((name) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(name),
+  );
+
+  for (const dateDir of dateDirs) {
+    const dirPath = path.join(receiptsBase, dateDir);
+    const stat = fs.statSync(dirPath);
+    if (!stat.isDirectory()) continue;
+
+    const files = fs.readdirSync(dirPath).filter((f) => f.endsWith('.json'));
+
+    for (const file of files) {
+      try {
+        const filePath = path.join(dirPath, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const receipt = JSON.parse(content) as Receipt;
+
+        if (receipt.reader === reader) {
+          readIds.add(receipt.entry_id);
+        }
+      } catch {
+        // Skip malformed receipt files
+      }
+    }
+  }
+
+  return readIds;
+}
+
 // --- Internal helpers ---
 
 /**

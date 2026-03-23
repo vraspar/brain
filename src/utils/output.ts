@@ -85,6 +85,24 @@ function buildDigestTable(entries: DigestEntry[]): string {
   return table.toString();
 }
 
+export function formatDigestSummary(entries: DigestEntry[]): string {
+  if (entries.length === 0) {
+    return chalk.dim('No entries found for this period.');
+  }
+
+  return entries
+    .map((entry) => {
+      const icon = entry.isNew ? '✨' : '📝';
+      const time = relativeTime(new Date(entry.updated));
+      const tags = entry.tags
+        .slice(0, 3)
+        .map((t) => chalk.blue(`#${t}`))
+        .join(' ');
+      return `  ${icon} ${chalk.bold(entry.title)} — ${entry.author} (${time}) ${tags}`;
+    })
+    .join('\n');
+}
+
 export function formatStats(stats: StatsResult[], options: FormatOptions = {}): string {
   if (options.format === 'json') {
     return JSON.stringify(stats, null, 2);
@@ -106,8 +124,18 @@ export function formatStats(stats: StatsResult[], options: FormatOptions = {}): 
   return table.toString();
 }
 
-export function formatSearchResults(entries: Entry[], options: FormatOptions = {}): string {
+export function formatSearchResults(
+  entries: Entry[],
+  options: FormatOptions & { snippets?: Map<string, string> } = {},
+): string {
   if (options.format === 'json') {
+    if (options.snippets) {
+      const withSnippets = entries.map((e) => ({
+        ...e,
+        preview: options.snippets!.get(e.id) ?? '',
+      }));
+      return JSON.stringify(withSnippets, null, 2);
+    }
     return JSON.stringify(entries, null, 2);
   }
 
@@ -115,9 +143,16 @@ export function formatSearchResults(entries: Entry[], options: FormatOptions = {
     return chalk.dim('No matching entries found.');
   }
 
+  const showPreview = options.snippets && options.snippets.size > 0;
+
+  const head = showPreview
+    ? ['Title', 'Author', 'Type', 'Tags', 'Preview']
+    : ['Title', 'Author', 'Type', 'Tags', 'Status'];
+
   const table = new Table({
-    head: ['Title', 'Author', 'Type', 'Tags', 'Status'],
+    head,
     style: { head: ['cyan'] },
+    ...(showPreview ? { colWidths: [null, null, null, null, 40] } : {}),
   });
 
   for (const entry of entries) {
@@ -128,13 +163,26 @@ export function formatSearchResults(entries: Entry[], options: FormatOptions = {
           ? chalk.yellow
           : chalk.gray;
 
-    table.push([
-      entry.title,
-      entry.author,
-      entry.type,
-      entry.tags.slice(0, 3).join(', '),
-      statusColor(entry.status),
-    ]);
+    if (showPreview) {
+      const snippet = options.snippets!.get(entry.id) ?? '';
+      // Strip FTS5 highlight markers and truncate
+      const cleanSnippet = snippet.replace(/[«»]/g, '').slice(0, 60);
+      table.push([
+        entry.title,
+        entry.author,
+        entry.type,
+        entry.tags.slice(0, 3).join(', '),
+        chalk.dim(cleanSnippet),
+      ]);
+    } else {
+      table.push([
+        entry.title,
+        entry.author,
+        entry.type,
+        entry.tags.slice(0, 3).join(', '),
+        statusColor(entry.status),
+      ]);
+    }
   }
 
   return `${chalk.bold(`Found ${entries.length} result${entries.length === 1 ? '' : 's'}:`)}\n${table.toString()}`;

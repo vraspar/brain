@@ -2,16 +2,32 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig, saveConfig } from '../core/config.js';
 import { createIndex, getDbPath, getRecentEntries } from '../core/index-db.js';
-import { getEntryStats, getTopEntries } from '../core/receipts.js';
+import { getEntryStats, getReadEntryIds, getTopEntries } from '../core/receipts.js';
 import { recordReceipt } from '../core/receipts.js';
-import { formatDigest } from '../utils/output.js';
+import { formatDigest, formatDigestSummary } from '../utils/output.js';
 import { parseTimeWindow } from '../utils/time.js';
 import type { DigestEntry } from '../types.js';
+
+interface DigestOptions {
+  since?: string;
+  tag?: string[];
+  type?: string;
+  author?: string;
+  mine?: boolean;
+  unread?: boolean;
+  summary?: boolean;
+}
 
 export const digestCommand = new Command('digest')
   .description('See what\'s new in the team brain')
   .option('--since <period>', 'Time period: 7d, 2w, 1m (default: since last digest or 7d)')
-  .action(async (options: { since?: string }) => {
+  .option('--tag <tag...>', 'Filter by tag (repeatable)')
+  .option('--type <type>', 'Filter by type: guide or skill')
+  .option('--author <author>', 'Filter by author')
+  .option('--mine', 'Show only your own entries')
+  .option('--unread', 'Show only entries you have not read')
+  .option('--summary', 'Compact one-line-per-entry output')
+  .action(async (options: DigestOptions) => {
     const format = digestCommand.parent?.opts().format ?? 'text';
 
     try {
@@ -29,11 +45,19 @@ export const digestCommand = new Command('digest')
           since = parseTimeWindow('7d');
         }
 
+        // Validate --type if provided
+        if (options.type && options.type !== 'guide' && options.type !== 'skill') {
+          throw new Error(`Invalid type "${options.type}". Must be "guide" or "skill".`);
+        }
+
+        // Resolve --mine to --author with current user
+        const authorFilter = options.mine ? config.author : options.author;
+
         // Get recent entries from index
         const recentEntries = getRecentEntries(db, since);
 
         // Build digest entries with access stats and new/updated classification
-        const digestEntries: DigestEntry[] = recentEntries.map((entry) => {
+        let digestEntries: DigestEntry[] = recentEntries.map((entry) => {
           const stats = getEntryStats(config.local, entry.id, options.since ?? '7d');
           const isNew = new Date(entry.created) >= since;
 
@@ -44,6 +68,24 @@ export const digestCommand = new Command('digest')
             isNew,
           };
         });
+
+        // Apply filters
+        if (options.type) {
+          digestEntries = digestEntries.filter((e) => e.type === options.type);
+        }
+        if (authorFilter) {
+          digestEntries = digestEntries.filter((e) => e.author === authorFilter);
+        }
+        if (options.tag?.length) {
+          const filterTags = new Set(options.tag.map((t) => t.toLowerCase()));
+          digestEntries = digestEntries.filter((e) =>
+            e.tags.some((t) => filterTags.has(t.toLowerCase())),
+          );
+        }
+        if (options.unread) {
+          const readIds = getReadEntryIds(config.local, config.author);
+          digestEntries = digestEntries.filter((e) => !readIds.has(e.id));
+        }
 
         // Record receipts for all entries shown
         for (const entry of digestEntries) {
@@ -66,9 +108,13 @@ export const digestCommand = new Command('digest')
           const period = options.since ?? (config.lastDigest ? 'since last digest' : '7d');
           console.log(chalk.bold(`\n🧠 Brain Digest (${period})\n`));
 
-          console.log(formatDigest(digestEntries));
+          if (options.summary) {
+            console.log(formatDigestSummary(digestEntries));
+          } else {
+            console.log(formatDigest(digestEntries));
+          }
 
-          if (topEntries.length > 0) {
+          if (topEntries.length > 0 && !options.summary) {
             const top = topEntries[0];
             console.log(
               chalk.bold.yellow(
