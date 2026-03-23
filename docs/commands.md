@@ -22,7 +22,7 @@ brain init [--name <name>] [--remote <url>] [--author <name>]
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--name <name>` | In JSON mode | Brain name. Used in the generated README. If omitted in text mode, triggers interactive prompts. |
-| `--remote <url>` | No | GitHub remote URL. If provided, adds as `origin` and pushes the initial commit. |
+| `--remote <url>` | No | Git remote URL. If provided, adds as `origin` and pushes the initial commit. |
 | `--author <name>` | No | Override the author identity. Default: `git config user.name`. |
 
 ### Behavior
@@ -31,9 +31,10 @@ brain init [--name <name>] [--remote <url>] [--author <name>]
 2. Scaffolds `guides/`, `skills/`, `_analytics/receipts/` with `.gitkeep` files
 3. Generates `.gitignore` (excludes `*.db`, `*.db-wal`, `*.db-shm`)
 4. Generates `README.md` with the brain name and connect instructions
-5. Commits everything with message `Initialize brain: <name>`
-6. If `--remote` is set: adds the remote and pushes (push failure is non-fatal)
-7. Writes `~/.brain/config.yaml`
+5. Creates a seed `guides/getting-started.md` so the brain is not empty on day one
+6. Commits everything with message `Initialize brain: <name>`
+7. If `--remote` is set: adds the remote and pushes (push failure is non-fatal)
+8. Writes `~/.brain/config.yaml`
 
 ### Examples
 
@@ -118,7 +119,7 @@ brain connect https://github.com/acme/brain-hub.git
 
 ## brain join
 
-Alias for `brain connect`. Supports the same arguments and flags.
+Hidden alias for `brain connect`. Not shown in `brain --help` output but works identically. Kept for backward compatibility with earlier documentation.
 
 ```
 brain join <url> [--author <name>]

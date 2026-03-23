@@ -84,7 +84,7 @@ Output:
    Try: brain digest
 ```
 
-`brain join <url>` is an alias for `brain connect` and works identically.
+`brain join <url>` also works as a hidden alias for `brain connect` (not shown in `--help`).
 
 ## Push your first entry
 

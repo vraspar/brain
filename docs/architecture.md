@@ -282,7 +282,8 @@ src/
     ├── git.ts            ← Git wrapper (simple-git)
     ├── output.ts         ← Terminal table formatting
     ├── slug.ts           ← Title → slug conversion
-    └── time.ts           ← Time window parsing, relative dates
+    ├── time.ts           ← Time window parsing, relative dates
+    └── url.ts            ← URL validation and credential sanitization
 ```
 
 ### Dependency direction

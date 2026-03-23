@@ -80,7 +80,7 @@ Creates `~/.brain/config.yaml` and `~/.brain/repo/`. Builds the FTS5 search inde
 
 ### `brain join <url>`
 
-Alias for `brain connect`.
+Hidden alias for `brain connect`. Not shown in `brain --help` but works identically. Kept for backward compatibility.
 
 ### `brain push`
 
@@ -359,7 +359,8 @@ src/
     ├── git.ts            # Git wrapper (simple-git)
     ├── output.ts         # Terminal formatting (tables, colors)
     ├── slug.ts           # Title-to-slug conversion
-    └── time.ts           # Time window parsing, relative dates
+    ├── time.ts           # Time window parsing, relative dates
+    └── url.ts            # URL validation and credential sanitization
 ```
 
 ## Development
