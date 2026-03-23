@@ -346,9 +346,9 @@ describe('extractTitle', () => {
     expect(extractTitle(content)).toBe('Docker Deployment Guide');
   });
 
-  it('extracts first non-empty line when no H1', () => {
+  it('returns null when no frontmatter or H1', () => {
     const content = 'This is the first line.\n\nMore content.';
-    expect(extractTitle(content)).toBe('This is the first line.');
+    expect(extractTitle(content)).toBeNull();
   });
 
   it('returns null for empty content', () => {

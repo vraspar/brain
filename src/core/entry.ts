@@ -183,7 +183,8 @@ export function createEntry(opts: CreateEntryOptions): Entry {
 
 /**
  * Extract title from markdown content.
- * Tries: (1) YAML frontmatter 'title', (2) first H1 heading, (3) first non-empty line, (4) null.
+ * Tries: (1) YAML frontmatter 'title', (2) first H1 heading, (3) null.
+ * Does NOT use first line — caller should fall back to filename instead.
  */
 export function extractTitle(content: string): string | null {
   const parsed = matter(content);
@@ -192,10 +193,6 @@ export function extractTitle(content: string): string | null {
   // Try first H1 heading
   const h1Match = parsed.content.match(/^#\s+(.+)$/m);
   if (h1Match) return h1Match[1].trim();
-
-  // Try first non-empty line
-  const firstLine = parsed.content.split('\n').find((line) => line.trim().length > 0);
-  if (firstLine) return firstLine.trim();
 
   return null;
 }
