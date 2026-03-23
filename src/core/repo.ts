@@ -13,6 +13,7 @@ import {
   pullLatest,
   pushToRemote,
 } from '../utils/git.js';
+import { sanitizeUrl } from '../utils/url.js';
 import { getBrainDir } from './config.js';
 
 const HUB_GITIGNORE = `# Brain local cache
@@ -234,7 +235,7 @@ export async function joinBrain(url: string, authorOverride?: string): Promise<B
   const hubName = extractHubName(repoDir);
 
   const config: BrainConfig = {
-    remote: url,
+    remote: sanitizeUrl(url),
     local: repoDir,
     author,
     hubName,
