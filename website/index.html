@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>brain — CLI-first knowledge sharing for dev teams</title>
+  <meta name="description" content="Share technical knowledge via git. Search with FTS5. Plug into AI agents via MCP.">
+  <meta property="og:title" content="brain — CLI-first knowledge sharing for dev teams">
+  <meta property="og:description" content="Share technical knowledge via git. Search with FTS5. Plug into AI agents via MCP.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://vraspar.github.io/brain/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='monospace' fill='%234ade80'>b</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-wordmark">brain</div>
+    <p class="hero-subtitle">
+      <span>CLI-first knowledge sharing for dev teams.</span><br>
+      Backed by git. Searchable with FTS5.<br>
+      Plugs into your AI agent via MCP.
+    </p>
+
+    <div class="install-block">
+      <code><span class="prompt">$</span> npm install -g @team/brain</code>
+      <button class="copy-btn" data-copy="npm install -g @team/brain" aria-label="Copy to clipboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </button>
+    </div>
+
+    <div class="terminal" id="hero-terminal" aria-label="Terminal demo showing brain CLI commands">
+      <span class="cursor">&nbsp;</span>
+    </div>
+
+    <div class="hero-links">
+      <a href="https://github.com/vraspar/brain">GitHub ↗</a>
+      <a href="https://github.com/vraspar/brain/tree/main/docs">Docs ↗</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- How It Works -->
+  <section class="reveal">
+    <div class="container">
+      <h2>How it works</h2>
+
+      <div class="steps-grid">
+        <div>
+          <div class="step-label">1. Create</div>
+          <div class="terminal" aria-label="Terminal showing brain init command">
+            <div><span class="prompt">$ </span><span class="command">brain init --name "Acme Engineering"</span></div>
+            <div class="output" style="white-space:pre">
+✅ Brain "Acme Engineering" is ready!
+   Local:  ~/.brain/repo
+   Remote: https://github.com/acme/brain-hub.git
+   Author: alice</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="step-label">2. Share</div>
+          <div class="terminal" aria-label="Terminal showing brain push command">
+            <div><span class="prompt">$ </span><span class="command">brain push --title "Docker Guide" \</span></div>
+            <div><span class="command">    --file ./guide.md</span></div>
+            <div class="output" style="white-space:pre">
+✅ Pushed: Docker Guide
+   Tags: docker (auto-detected)</div>
+          </div>
+        </div>
+
+        <div class="step-full">
+          <div class="step-label">3. Discover</div>
+          <div class="terminal" aria-label="Terminal showing brain digest command">
+            <div><span class="prompt">$ </span><span class="command">brain digest</span></div>
+            <div class="output" style="white-space:pre">
+✨ New Entries (3)
+┌────────────────────────┬────────┬───────┬───────┐
+│ Title                  │ Author │ Type  │ Reads │
+├────────────────────────┼────────┼───────┼───────┤
+│ Docker Guide           │ alice  │ guide │ 8     │
+│ K8s Patterns           │ bob    │ skill │ 12    │
+│ CI Pipeline            │ carol  │ guide │ 5     │
+└────────────────────────┴────────┴───────┴───────┘
+
+📈 Top: K8s Patterns (12 reads, 4 unique)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Brain -->
+  <section class="reveal">
+    <div class="container">
+      <h2>Why brain?</h2>
+
+      <div class="cards-grid">
+        <div class="card">
+          <h3>Git as storage</h3>
+          <p>Entries are markdown in a git repo. No server. No database. No infrastructure to manage. Version history and access control are free.</p>
+        </div>
+        <div class="card">
+          <h3>FTS5 search</h3>
+          <p>SQLite FTS5 with BM25 ranking. Sub-millisecond search. Works offline. The index is a disposable cache — rebuilt from source on every sync.</p>
+        </div>
+        <div class="card">
+          <h3>MCP-native</h3>
+          <p>Your AI agent already knows what your team knows. 5 tools and 2 resources exposed via Model Context Protocol. <code>brain serve</code> starts the server.</p>
+        </div>
+      </div>
+
+      <p class="section-punch">
+        <strong>Zero infrastructure. One command to start.</strong><br>
+        <code>brain connect https://github.com/acme/brain-hub.git</code>
+      </p>
+    </div>
+  </section>
+
+  <!-- Agent Integration -->
+  <section class="agent-section reveal">
+    <div class="container">
+      <h2>Works with your AI agent</h2>
+
+      <p class="agent-desc">Add to your MCP client config:</p>
+
+      <div class="terminal" aria-label="MCP configuration JSON">
+        <div class="terminal-title">mcp.json</div>
+        <div class="output" style="white-space:pre">{
+  "mcpServers": {
+    "brain": {
+      "command": "brain",
+      "args": ["serve"]
+    }
+  }
+}</div>
+      </div>
+
+      <p class="agent-tools">5 tools: push · search · whats_new · get_entry · stats<br>2 resources: brain://digest · brain://stats</p>
+
+      <p class="agent-desc">Your agent can search team knowledge, publish findings, and check what's new — without you asking it to.</p>
+
+      <p class="agent-clients">Claude · Copilot · Cursor · Windsurf</p>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="quick-start reveal">
+    <div class="container">
+      <h2>Quick start</h2>
+
+      <div class="terminal" aria-label="Installation and setup commands">
+        <div><span class="comment"># Install</span></div>
+        <div><span class="prompt">$ </span><span class="command">git clone https://github.com/vraspar/brain.git</span></div>
+        <div><span class="prompt">$ </span><span class="command">cd brain && npm install && npm run build</span></div>
+        <div><span class="prompt">$ </span><span class="command">npm link</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Create a brain (first person)</span></div>
+        <div><span class="prompt">$ </span><span class="command">brain init --name "Acme Engineering"</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Or join an existing one (teammates)</span></div>
+        <div><span class="prompt">$ </span><span class="command">brain connect &lt;url&gt;</span></div>
+      </div>
+
+      <p class="prereqs">Requires Node.js 18+ and git.</p>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section class="architecture reveal">
+    <div class="container">
+      <h2>Under the hood</h2>
+
+<pre aria-label="Architecture diagram">
+       brain push / brain search / brain digest
+                        │
+                 ┌──────▼──────┐
+                 │     <span class="arch-accent">CLI</span>     │
+                 └──────┬──────┘
+                        │
+       ┌────────────────┼────────────────┐
+       ▼                ▼                ▼
+  ┌──────────┐   ┌────────────┐   ┌──────────┐
+  │ <span class="arch-accent">Git repo</span> │   │ <span class="arch-accent">SQLite</span>    │   │ <span class="arch-accent">Receipts</span> │
+  │ (storage)│   │ <span class="arch-accent">FTS5</span>      │   │ (analytics│
+  │          │   │ (search)   │   │          │
+  └──────────┘   └────────────┘   └──────────┘
+</pre>
+
+      <div class="arch-notes">
+        <div class="arch-note">
+          <strong>Storage</strong>
+          Markdown + YAML frontmatter in a git repo
+        </div>
+        <div class="arch-note">
+          <strong>Search</strong>
+          FTS5 virtual table, rebuilt on sync
+        </div>
+        <div class="arch-note">
+          <strong>Analytics</strong>
+          JSON receipts, eventually consistent
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div>brain v0.1.0 · MIT License</div>
+    <div class="footer-links">
+      <a href="https://github.com/vraspar/brain">GitHub ↗</a>
+      <a href="https://github.com/vraspar/brain/tree/main/docs">Docs ↗</a>
+    </div>
+  </div>
+</footer>
+
+<script src="terminal.js"></script>
+</body>
+</html>
