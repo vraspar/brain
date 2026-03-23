@@ -70,14 +70,14 @@ export async function addRemote(repoPath: string, name: string, url: string): Pr
 /**
  * Stage all files and commit. Used for initial commit in brain init.
  */
-export async function commitAll(repoPath: string, message: string): Promise<void> {
+export async function commitAll(repoPath: string, commitMessage: string): Promise<void> {
   const git = createGit(repoPath);
   try {
     await git.add('.');
-    await git.commit(message);
+    await git.commit(commitMessage);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to commit in "${repoPath}": ${msg}`);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to commit in "${repoPath}": ${message}`);
   }
 }
 
