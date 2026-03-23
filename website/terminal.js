@@ -9,27 +9,27 @@
       command: 'brain search "docker deployment"',
       output:
         'Found 3 results:\n' +
-        '┌────────────────────────┬────────┬───────┬───────────────┐\n' +
-        '│ Title                  │ Author │ Type  │ Tags          │\n' +
-        '├────────────────────────┼────────┼───────┼───────────────┤\n' +
-        '│ Docker Multi-Stage     │ alice  │ guide │ docker        │\n' +
-        '│ K8s Deployment Guide   │ bob    │ guide │ k8s, docker   │\n' +
-        '│ CI Pipeline Setup      │ carol  │ guide │ ci, github    │\n' +
-        '└────────────────────────┴────────┴───────┴───────────────┘',
+        '+------------------------+--------+-------+---------------+\n' +
+        '| Title                  | Author | Type  | Tags          |\n' +
+        '+------------------------+--------+-------+---------------+\n' +
+        '| Docker Multi-Stage     | alice  | guide | docker        |\n' +
+        '| K8s Deployment Guide   | bob    | guide | k8s, docker   |\n' +
+        '| CI Pipeline Setup      | carol  | guide | ci, github    |\n' +
+        '+------------------------+--------+-------+---------------+',
       pauseAfter: 2500,
     },
     {
       command: 'brain digest --since 7d',
       output:
-        '✨ New Entries (2)\n' +
-        '┌────────────────────────┬────────┬───────┬───────┐\n' +
-        '│ Title                  │ Author │ Type  │ Reads │\n' +
-        '├────────────────────────┼────────┼───────┼───────┤\n' +
-        '│ Docker Multi-Stage     │ alice  │ guide │ 8     │\n' +
-        '│ React Testing Patterns │ bob    │ skill │ 12    │\n' +
-        '└────────────────────────┴────────┴───────┴───────┘\n' +
+        'New Entries (2)\n' +
+        '+------------------------+--------+-------+-------+\n' +
+        '| Title                  | Author | Type  | Reads |\n' +
+        '+------------------------+--------+-------+-------+\n' +
+        '| Docker Multi-Stage     | alice  | guide | 8     |\n' +
+        '| React Testing Patterns | bob    | skill | 12    |\n' +
+        '+------------------------+--------+-------+-------+\n' +
         '\n' +
-        '📈 Top: React Testing Patterns (12 reads, 4 unique)',
+        'Top: React Testing Patterns (12 reads, 4 unique)',
       pauseAfter: 2500,
     },
     {
