@@ -47,8 +47,11 @@ brain search "kubernetes deployment"
 # Read a specific entry
 brain show k8s-deployment-guide
 
-# Publish a new entry
-brain push --title "Docker Multi-Stage Builds" --type guide --file ./docker-guide.md
+# Publish a new entry (title auto-detected from content)
+brain push ./docker-guide.md
+
+# Or push multiple files at once
+brain push ./docs/*.md
 
 # Pull latest from remote
 brain sync
@@ -84,29 +87,38 @@ Hidden alias for `brain connect`. Not shown in `brain --help` but works identica
 
 ### `brain push`
 
-Write a new entry to the repository. Commits and pushes to the remote.
+Push one or more entries to the repository. Commits and pushes to the remote.
 
 ```
-brain push --title <title> --file <path> [--type guide|skill] [--tags <csv>] [--summary <text>]
+brain push <file...>              # positional file args (title auto-detected)
+brain push ./docs/*.md            # glob pattern for multi-file push
+brain push --file <path>          # legacy single-file syntax
 ```
 
-- `--title` (required): Entry title. Slugified to produce the entry ID (e.g. "Docker Tips" becomes `docker-tips`).
-- `--file` (required): Path to a markdown file containing the entry body.
-- `--type`: `guide` (default) or `skill`.
-- `--tags`: Comma-separated list. If omitted, tags are auto-detected by matching content against a built-in dictionary of 56 tech terms (docker, kubernetes, react, typescript, etc.).
+- `<file...>`: One or more markdown files, or a glob pattern. Title, type, and tags are auto-detected from content.
+- `--file <path>`: Alternative to positional arg for single file.
+- `--title <title>`: Override auto-detected title. Cannot be used with multiple files.
+- `--type`: `guide` (default) or `skill`. Auto-detected from frontmatter if present.
+- `--tags`: Comma-separated list. If omitted, tags are auto-detected by matching content against a built-in dictionary of 56 tech terms.
 - `--summary`: Short description of the entry.
 
-The entry is written to `guides/<slug>.md` or `skills/<slug>.md`, committed with message `Add <type>: <title>`, and pushed.
+Title detection order: `--title` flag, frontmatter `title` field, first H1 heading, first non-empty line, filename.
 
 ### `brain digest`
 
 Show entries created or updated within a time window.
 
 ```
-brain digest [--since <period>]
+brain digest [--since <period>] [--tag <tag>...] [--type guide|skill] [--author <name>] [--mine] [--unread] [--summary]
 ```
 
 - `--since`: Time window in format `Nd`, `Nw`, or `Nm` (days, weeks, months). Default: since last digest, or `7d` on first run.
+- `--tag`: Filter by tag (repeatable).
+- `--type`: Filter by entry type.
+- `--author`: Filter by author name.
+- `--mine`: Show only your own entries.
+- `--unread`: Show only entries you have not read.
+- `--summary`: Compact one-line-per-entry output.
 
 Displays new and updated entries in separate tables with read counts. Shows the most-accessed entry as a highlight. Updates `lastDigest` in config so the next run picks up from where you left off.
 
@@ -115,12 +127,13 @@ Displays new and updated entries in separate tables with read counts. Shows the 
 Full-text search across all entries using FTS5 with BM25 ranking.
 
 ```
-brain search "kubernetes deployment" [--limit <n>]
+brain search "kubernetes deployment" [--limit <n>] [--no-preview]
 ```
 
 - `--limit`: Maximum results (default: 20).
+- `--no-preview`: Hide content preview snippets.
 
-Searches across title, tags, content, and summary fields. Falls back to LIKE-based search if the FTS5 query fails (e.g. unsupported syntax).
+Searches across title, tags, content, and summary fields. Results include contextual snippets by default. Supports prefix matching (e.g. "kube" matches "kubernetes"). Falls back to LIKE-based search if the FTS5 query fails.
 
 ### `brain show <entry-id>`
 
@@ -137,10 +150,10 @@ Shows title, author, type, status, tags, dates, summary, related repos/tools, an
 List all entries in the index.
 
 ```
-brain list [--type guide|skill] [--author <name>]
+brain list [--type guide|skill] [--author <name>] [--tag <tag>] [--mine] [--unread]
 ```
 
-Returns a table of entries sorted by last updated. Both filters can be combined.
+Returns a table of entries sorted by last updated. Filters can be combined.
 
 ### `brain stats`
 
@@ -154,6 +167,18 @@ brain stats [--period <period>] [--author <name>]
 - `--author`: Show stats for a different author (default: you).
 
 Reads receipt files from `_analytics/receipts/` and aggregates by entry, showing total reads and unique readers.
+
+### `brain retract <entry-id>`
+
+Remove an entry from the brain. Deletes the file, commits, and pushes.
+
+```
+brain retract <entry-id> [--force]
+```
+
+- `--force`: Skip confirmation prompt.
+
+Prompts for confirmation unless `--force` is passed. The file is deleted from disk and the deletion is committed with message `Retract <type>: <title>`.
 
 ### `brain sync`
 
@@ -342,6 +367,7 @@ src/
 │   ├── search.ts         # brain search
 │   ├── show.ts           # brain show
 │   ├── list.ts           # brain list
+│   ├── retract.ts        # brain retract
 │   ├── stats.ts          # brain stats
 │   ├── sync.ts           # brain sync
 │   └── serve.ts          # brain serve

@@ -129,19 +129,31 @@ brain join <url> [--author <name>]
 
 ## brain push
 
-Write a new entry to the repository, commit, and push to the remote.
+Push one or more entries to the repository, commit, and push to the remote.
 
 ```
-brain push --title <title> --file <path> [--type guide|skill] [--tags <csv>] [--summary <text>]
+brain push <file...>
+brain push ./docs/*.md
+brain push --file <path> [--title <title>] [--type guide|skill] [--tags <csv>] [--summary <text>]
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--title <title>` | Yes | Entry title. Slugified to produce the entry ID and filename. |
-| `--file <path>` | Yes | Path to a markdown file containing the entry body. |
-| `--type <type>` | No | `guide` (default) or `skill`. |
+| Argument/Flag | Required | Description |
+|---------------|----------|-------------|
+| `<file...>` | Yes (or `--file`) | One or more markdown files, or a glob pattern. |
+| `--file <path>` | Yes (or positional) | Single file path (legacy syntax). |
+| `--title <title>` | No | Override auto-detected title. Cannot be used with multiple files. |
+| `--type <type>` | No | `guide` (default) or `skill`. Auto-detected from frontmatter if present. |
 | `--tags <tags>` | No | Comma-separated tags. If omitted, auto-detected from content. |
 | `--summary <text>` | No | Short description. |
+
+### Title detection
+
+Title is resolved in this order:
+1. `--title` flag
+2. `title` field in YAML frontmatter
+3. First H1 heading (`# ...`) in content
+4. First non-empty line
+5. Filename (without extension)
 
 ### Auto-tagging
 
@@ -156,45 +168,48 @@ The title is converted to a slug: lowercased, special characters removed, spaces
 - Type `guide` → `guides/<slug>.md`
 - Type `skill` → `skills/<slug>.md`
 
-### Commit behavior
+### Multi-file push
 
-The entry file is committed with message `Add <type>: <title>` and pushed to the remote. A read receipt is recorded for the author.
+When pushing multiple files, each file is processed independently. Title, type, and tags are auto-detected per file. Per-file errors are reported but do not stop the batch.
+
+```bash
+brain push ./docs/*.md
+```
+
+```
+  ✅ Docker Guide
+  ✅ K8s Patterns
+  ✗ broken.md: missing required frontmatter: title
+✅ Pushed 2 entries
+✗ 1 file(s) failed
+```
 
 ### Examples
 
 ```bash
-# Minimal
-brain push --title "K8s Secrets Management" --file ./k8s-secrets.md
+# Single file (title auto-detected from content)
+brain push ./k8s-secrets.md
 
-# Full options
-brain push \
+# Glob pattern
+brain push ./docs/*.md
+
+# Directory (all .md files inside)
+brain push ./docs/
+
+# With explicit overrides
+brain push ./react-testing.md \
   --title "React Testing Patterns" \
   --type skill \
-  --file ./react-testing.md \
-  --tags "react,testing,jest" \
-  --summary "Patterns for testing React components with Jest and RTL"
+  --tags "react,testing,jest"
 
-# JSON output
-brain push --title "My Guide" --file ./guide.md --format json
-```
-
-JSON output:
-
-```json
-{
-  "status": "pushed",
-  "id": "my-guide",
-  "title": "My Guide",
-  "type": "guide",
-  "filePath": "guides/my-guide.md",
-  "tags": ["react", "testing"]
-}
+# Legacy syntax (still works)
+brain push --title "My Guide" --file ./guide.md
 ```
 
 ### Errors
 
-- `--title` and `--file` are both required.
-- File must exist at the given path.
+- At least one file path or `--file` is required.
+- `--title` cannot be used with multiple files.
 - Type must be `guide` or `skill`.
 
 ---
@@ -204,45 +219,57 @@ JSON output:
 Show entries created or updated within a time window.
 
 ```
-brain digest [--since <period>]
+brain digest [--since <period>] [--tag <tag>...] [--type <type>] [--author <name>] [--mine] [--unread] [--summary]
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--since <period>` | No | Time window. Format: `Nd` (days), `Nw` (weeks), `Nm` (months). Default: since last digest, or `7d` on first run. |
+| `--tag <tag>` | No | Filter by tag. Repeatable (entries matching any tag are included). |
+| `--type <type>` | No | Filter by type: `guide` or `skill`. |
+| `--author <name>` | No | Filter by author name (exact match). |
+| `--mine` | No | Show only your own entries (shorthand for `--author` with your name). |
+| `--unread` | No | Show only entries you have not read. |
+| `--summary` | No | Compact one-line-per-entry output instead of full table. |
 
 ### Behavior
 
 1. Queries the FTS5 index for entries with `created_at` or `updated_at` within the window
 2. Enriches each entry with read counts from the receipt system
-3. Separates results into "New" (created in period) and "Updated" (modified in period)
-4. Highlights the most-accessed entry
-5. Records a read receipt for each displayed entry
-6. Updates `lastDigest` in config (next run without `--since` picks up from here)
+3. Applies filters (type, author/mine, tag, unread)
+4. Separates results into "New" (created in period) and "Updated" (modified in period)
+5. Highlights the most-accessed entry (unless `--summary` mode)
+6. Records a read receipt for each displayed entry
+7. Updates `lastDigest` in config (next run without `--since` picks up from here)
 
 ### Examples
 
 ```bash
-brain digest                 # since last digest, or 7d
-brain digest --since 14d     # last 14 days
-brain digest --since 1m      # last 30 days
-brain digest --format json   # machine-readable
+brain digest                        # since last digest, or 7d
+brain digest --since 14d            # last 14 days
+brain digest --mine                 # only your entries
+brain digest --unread               # only entries you haven't read
+brain digest --tag docker --tag k8s # entries tagged docker or k8s
+brain digest --type skill           # only skills
+brain digest --summary              # compact one-line format
+brain digest --format json          # machine-readable
 ```
 
 ---
 
 ## brain search
 
-Full-text search across all entries using SQLite FTS5 with BM25 ranking.
+Full-text search across all entries using SQLite FTS5 with BM25 ranking. Results include contextual snippets by default.
 
 ```
-brain search <query> [--limit <n>]
+brain search <query> [--limit <n>] [--no-preview]
 ```
 
 | Argument/Flag | Required | Description |
 |---------------|----------|-------------|
-| `<query>` | Yes | Search terms. |
+| `<query>` | Yes | Search terms. Supports prefix matching (e.g. "kube" matches "kubernetes"). |
 | `--limit <n>` | No | Maximum results. Default: 20. |
+| `--no-preview` | No | Hide content preview snippets from results. |
 
 ### Search behavior
 
@@ -296,16 +323,19 @@ To find entry IDs, use `brain search` or `brain list`.
 
 ## brain list
 
-List all entries, optionally filtered by type or author.
+List all entries, optionally filtered.
 
 ```
-brain list [--type guide|skill] [--author <name>]
+brain list [--type guide|skill] [--author <name>] [--tag <tag>] [--mine] [--unread]
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--type <type>` | No | Filter: `guide` or `skill`. |
 | `--author <name>` | No | Filter by author name (exact match). |
+| `--tag <tag>` | No | Filter by tag. |
+| `--mine` | No | Show only your own entries. |
+| `--unread` | No | Show only entries you have not read. |
 
 ### Examples
 
@@ -313,7 +343,8 @@ brain list [--type guide|skill] [--author <name>]
 brain list                     # all entries
 brain list --type skill        # only skills
 brain list --author alice      # only alice's entries
-brain list --type guide --author bob  # combined filters
+brain list --mine --unread     # your unread entries
+brain list --tag docker        # entries tagged 'docker'
 brain list --format json       # JSON array of entries
 ```
 
@@ -349,6 +380,41 @@ brain stats --period 1m       # your entries, last 30 days
 brain stats --author alice    # alice's entries
 brain stats --format json     # JSON array of StatsResult objects
 ```
+
+---
+
+## brain retract
+
+Remove an entry from the brain. Deletes the file from disk, commits the deletion, and pushes.
+
+```
+brain retract <entry-id> [--force]
+```
+
+| Argument/Flag | Required | Description |
+|---------------|----------|-------------|
+| `<entry-id>` | Yes | Entry ID (slug) to remove. |
+| `--force` | No | Skip the confirmation prompt. |
+
+### Behavior
+
+1. Looks up the entry in the index
+2. Prompts for confirmation (unless `--force`)
+3. Deletes the file from disk
+4. Commits with message `Retract <type>: <title>` and pushes
+5. Rebuilds the FTS5 index
+
+### Examples
+
+```bash
+brain retract old-deployment-guide          # prompts for confirmation
+brain retract old-deployment-guide --force  # no prompt
+brain retract old-deployment-guide --format json
+```
+
+### Errors
+
+- Fails if the entry ID is not found.
 
 ---
 

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-23
+
+### Added
+
+- `brain retract <entry-id>` command to remove entries (with confirmation prompt and `--force` flag)
+- Flexible push: `brain push ./file.md` with auto-detected title, type, and tags from content
+- Multi-file push: `brain push ./docs/*.md` with glob support and per-file error reporting
+- Directory push: `brain push ./docs/` pushes all `.md` files inside
+- Title auto-detection chain: frontmatter title, H1 heading, first non-empty line, filename
+- Search result snippets: contextual preview text shown by default, disable with `--no-preview`
+- Prefix search: partial terms match (e.g. "kube" matches "kubernetes")
+- Digest filters: `--tag`, `--type`, `--author`, `--mine`, `--unread`, `--summary`
+- List filters: `--tag`, `--mine`, `--unread`
+- Compact digest output with `--summary` flag
+
 ## [0.1.0] - 2026-03-23
 
 ### Added

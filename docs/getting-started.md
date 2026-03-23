@@ -92,7 +92,7 @@ Write a markdown file with your knowledge, then push it:
 
 ```bash
 cat > my-guide.md << 'EOF'
-## Overview
+# CI Pipeline Setup
 
 This guide explains how to set up our CI pipeline using GitHub Actions.
 
@@ -103,7 +103,7 @@ This guide explains how to set up our CI pipeline using GitHub Actions.
 3. Add test and lint steps
 EOF
 
-brain push --title "CI Pipeline Setup" --type guide --file ./my-guide.md
+brain push ./my-guide.md
 ```
 
 Output:
@@ -116,7 +116,11 @@ Output:
    Tags: github (auto-detected)
 ```
 
-The entry is committed to the local repo and pushed to the remote. Tags are auto-detected from content if you don't provide `--tags`.
+The title is auto-detected from the H1 heading. Tags are auto-detected from content. To push multiple files at once:
+
+```bash
+brain push ./docs/*.md
+```
 
 ## Search
 
@@ -124,16 +128,7 @@ The entry is committed to the local repo and pushed to the remote. Tags are auto
 brain search "CI pipeline"
 ```
 
-Returns matching entries ranked by relevance (FTS5 BM25 scoring):
-
-```
-Found 1 result:
-┌────────────────────┬────────┬───────┬────────┬────────┐
-│ Title              │ Author │ Type  │ Tags   │ Status │
-├────────────────────┼────────┼───────┼────────┼────────┤
-│ CI Pipeline Setup  │ alice  │ guide │ github │ active │
-└────────────────────┴────────┴───────┴────────┴────────┘
-```
+Returns matching entries ranked by relevance with contextual snippets. Use `--no-preview` to hide snippets.
 
 ## Read an entry
 
@@ -149,17 +144,13 @@ Displays the full entry content including metadata. Records a read receipt for a
 brain digest
 ```
 
-Shows entries created or updated since your last digest (or last 7 days on first run):
+Shows entries created or updated since your last digest (or last 7 days on first run). Filter with `--mine`, `--unread`, `--tag`, `--type`, or `--author`:
 
-```
-🧠 Brain Digest (7d)
-
-✨ New Entries (1)
-┌────────────────────┬────────┬───────┬────────┬───────┐
-│ Title              │ Author │ Type  │ Tags   │ Reads │
-├────────────────────┼────────┼───────┼────────┼───────┤
-│ CI Pipeline Setup  │ alice  │ guide │ github │ 3     │
-└────────────────────┴────────┴───────┴────────┴───────┘
+```bash
+brain digest --unread             # only entries you haven't read
+brain digest --mine --since 1m    # your entries from last 30 days
+brain digest --tag docker         # entries tagged 'docker'
+brain digest --summary            # compact one-line format
 ```
 
 ## Stay in sync
