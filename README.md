@@ -4,19 +4,12 @@ A CLI tool and MCP server for sharing technical knowledge across a team. Entries
 
 ## How it works
 
-```
-                  brain push / brain search / brain digest
-                           │
-                    ┌──────▼──────┐
-                    │   CLI       │
-                    └──────┬──────┘
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-   ┌────────────┐  ┌─────────────┐  ┌────────────┐
-   │ Git repo   │  │ SQLite FTS5 │  │ Receipts   │
-   │ (storage)  │  │ (search)    │  │ (analytics)│
-   └────────────┘  └─────────────┘  └────────────┘
+```mermaid
+flowchart TD
+    A["brain push / brain search / brain digest"] --> B[CLI]
+    B --> C["Git Repo\n(storage)"]
+    B --> D["SQLite FTS5\n(search)"]
+    B --> E["Receipts\n(analytics)"]
 ```
 
 - **Storage**: Markdown files with YAML frontmatter, committed to a shared git repo

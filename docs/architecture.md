@@ -6,17 +6,23 @@ This document covers how Brain works internally: storage, indexing, sync, analyt
 
 Brain has four layers:
 
-```
-┌──────────────────────────────────────────────────┐
-│                  CLI / MCP Server                │
-│  Commands parse args, call core, format output   │
-├──────────────────────────────────────────────────┤
-│                   Core Layer                     │
-│  config.ts  entry.ts  index-db.ts  receipts.ts   │
-├────────────────┬─────────────┬───────────────────┤
-│   Git Repo     │  SQLite DB  │  Receipt Files    │
-│  (persistent)  │  (cache)    │  (in repo)        │
-└────────────────┴─────────────┴───────────────────┘
+```mermaid
+flowchart TD
+    subgraph Interface["CLI / MCP Server"]
+        A["Commands parse args, call core, format output"]
+    end
+    subgraph Core["Core Layer"]
+        B["config.ts &nbsp; entry.ts &nbsp; index-db.ts &nbsp; receipts.ts"]
+    end
+    subgraph Storage
+        C["Git Repo\n(persistent)"]
+        D["SQLite DB\n(cache)"]
+        E["Receipt Files\n(in repo)"]
+    end
+    Interface --> Core
+    Core --> C
+    Core --> D
+    Core --> E
 ```
 
 - **Git repo** is the source of truth for entries. It's a regular git repository that can be hosted anywhere.
@@ -226,16 +232,12 @@ The MCP server (`src/mcp/server.ts`) uses the `@modelcontextprotocol/sdk` packag
 
 ### Architecture
 
-```
-┌──────────────┐     stdio      ┌──────────────────┐
-│  MCP Client  │ ◄────────────► │  Brain MCP Server │
-│  (Claude,    │                │                   │
-│   Copilot)   │                │  Tools (5)        │
-│              │                │  Resources (2)    │
-│              │                │  Context:         │
-│              │                │    - BrainConfig   │
-│              │                │    - SQLite DB     │
-└──────────────┘                └──────────────────┘
+```mermaid
+flowchart LR
+    A["MCP Client\n(Claude, Copilot)"] <-->|stdio| B["Brain MCP Server"]
+    B --- C["Tools (5)"]
+    B --- D["Resources (2)"]
+    B --- E["Context:\nBrainConfig + SQLite DB"]
 ```
 
 ### Initialization
@@ -285,12 +287,11 @@ src/
 
 ### Dependency direction
 
-```
-commands/ ──► core/ ──► utils/
-   │                     ▲
-   └──► utils/ ──────────┘
-
-mcp/ ──► core/ ──► utils/
+```mermaid
+flowchart LR
+    commands/ --> core/ --> utils/
+    mcp/ --> core/
+    commands/ --> utils/
 ```
 
 Commands and MCP handlers depend on core. Core depends on utils. There are no circular dependencies. The core layer has no knowledge of CLI or MCP concerns — it is purely business logic operating on entries, config, and git.

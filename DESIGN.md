@@ -105,32 +105,14 @@ The tradeoff: receipt files accumulate over time. At team scale (10 people, 5 re
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    DEVELOPER'S MACHINE                       │
-│                                                              │
-│  ┌──────────┐    ┌────────────┐    ┌──────────────────────┐ │
-│  │ AI Agent │◄──►│ MCP Server │◄──►│ Local Git Clone      │ │
-│  │ (Copilot,│    │ (brain     │    │ + SQLite FTS5 Cache  │ │
-│  │  Claude) │    │  serve)    │    │ + Receipt Files      │ │
-│  └──────────┘    └────────────┘    └──────────┬───────────┘ │
-│                   ┌──────────┐                │             │
-│                   │ CLI      │────────────────►│             │
-│                   │ (brain)  │                │             │
-│                   └──────────┘                │             │
-└───────────────────────────────────────────────│─────────────┘
-                                                │
-                                           git push/pull
-                                                │
-                                      ┌─────────▼──────────┐
-                                      │ GitHub / DevOps    │
-                                      │ Private Repository │
-                                      │                    │
-                                      │  guides/           │
-                                      │  skills/           │
-                                      │  _analytics/       │
-                                      │    receipts/       │
-                                      └────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Machine["Developer's Machine"]
+        Agent["AI Agent\n(Copilot, Claude)"] <-->|stdio| MCP["MCP Server\n(brain serve)"]
+        CLI["CLI\n(brain)"] --> Local
+        MCP <--> Local["Local Git Clone\n+ SQLite FTS5 Cache\n+ Receipt Files"]
+    end
+    Local <-->|"git push / pull"| Remote["GitHub / DevOps\nPrivate Repository\n\nguides/\nskills/\n_analytics/receipts/"]
 ```
 
 ### Layers

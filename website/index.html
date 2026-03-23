@@ -31,8 +31,8 @@
     </p>
 
     <div class="install-block">
-      <code><span class="prompt">$</span> npm install -g @team/brain</code>
-      <button class="copy-btn" data-copy="npm install -g @team/brain" aria-label="Copy to clipboard">
+      <code><span class="prompt">$</span> git clone https://github.com/vraspar/brain.git</code>
+      <button class="copy-btn" data-copy="git clone https://github.com/vraspar/brain.git" aria-label="Copy to clipboard">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
       </button>
     </div>
@@ -180,21 +180,26 @@
     <div class="container">
       <h2>Under the hood</h2>
 
-<pre aria-label="Architecture diagram">
-       brain push / brain search / brain digest
-                        │
-                 ┌──────▼──────┐
-                 │     <span class="arch-accent">CLI</span>     │
-                 └──────┬──────┘
-                        │
-       ┌────────────────┼────────────────┐
-       ▼                ▼                ▼
-  ┌──────────┐   ┌────────────┐   ┌──────────┐
-  │ <span class="arch-accent">Git repo</span> │   │ <span class="arch-accent">SQLite</span>    │   │ <span class="arch-accent">Receipts</span> │
-  │ (storage)│   │ <span class="arch-accent">FTS5</span>      │   │ (analytics│
-  │          │   │ (search)   │   │          │
-  └──────────┘   └────────────┘   └──────────┘
-</pre>
+      <div class="arch-diagram" aria-label="Architecture diagram">
+        <div class="arch-label">brain push / brain search / brain digest</div>
+        <div class="arch-arrow-down"></div>
+        <div class="arch-box arch-box--accent">CLI</div>
+        <div class="arch-arrow-down"></div>
+        <div class="arch-row">
+          <div class="arch-box">
+            <span class="arch-accent">Git repo</span>
+            <span class="arch-sub">storage</span>
+          </div>
+          <div class="arch-box">
+            <span class="arch-accent">SQLite FTS5</span>
+            <span class="arch-sub">search</span>
+          </div>
+          <div class="arch-box">
+            <span class="arch-accent">Receipts</span>
+            <span class="arch-sub">analytics</span>
+          </div>
+        </div>
+      </div>
 
       <div class="arch-notes">
         <div class="arch-note">
