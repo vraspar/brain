@@ -102,32 +102,58 @@ export function rebuildIndex(db: Database.Database, entries: Entry[]): void {
  * Search entries using FTS5 full-text search with BM25 ranking.
  * Returns matching entries sorted by relevance.
  */
+/**
+ * Sanitize user input for safe FTS5 querying.
+ * Strips FTS5 operators (AND, OR, NOT, NEAR), special chars, and wraps terms in quotes.
+ */
+function sanitizeFtsQuery(query: string): string {
+  // Strip FTS5 reserved operators (case-insensitive, whole words only)
+  const withoutOperators = query.replace(/\b(AND|OR|NOT|NEAR)\b/gi, ' ');
+
+  // Strip special characters including + (for C++ style tokens) and FTS5 syntax chars
+  const cleaned = withoutOperators
+    .replace(/['"(){}[\]*:^~!@#$%&+=|\\<>,;+\-]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (cleaned.length === 0) return '';
+
+  // Wrap each term in double quotes to prevent FTS5 interpretation
+  return cleaned.map((term) => `"${term}"`).join(' ');
+}
+
 export function searchEntries(db: Database.Database, query: string, limit = 20): Entry[] {
   if (!query.trim()) return [];
 
-  // Sanitize FTS5 query: strip quotes, wrap each term in double quotes
-  // to prevent special characters (*, AND, OR, NOT, NEAR, etc.) from
-  // being interpreted as FTS5 syntax
-  const sanitized = query
-    .replace(/['"(){}[\]*:^~!@#$%&+=|\\<>,;]/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((term) => `"${term}"`)
-    .join(' ');
-
+  const sanitized = sanitizeFtsQuery(query);
   if (!sanitized) return [];
 
-  const stmt = db.prepare(`
-    SELECT e.*
-    FROM entries e
-    JOIN entries_fts fts ON e.rowid = fts.rowid
-    WHERE entries_fts MATCH @query
-    ORDER BY rank
-    LIMIT @limit
-  `);
+  // Try FTS5 search first, fall back to LIKE if it fails
+  try {
+    const stmt = db.prepare(`
+      SELECT e.*
+      FROM entries e
+      JOIN entries_fts fts ON e.rowid = fts.rowid
+      WHERE entries_fts MATCH @query
+      ORDER BY rank
+      LIMIT @limit
+    `);
 
-  const rows = stmt.all({ query: sanitized, limit }) as EntryRow[];
-  return rows.map(rowToEntry);
+    const rows = stmt.all({ query: sanitized, limit }) as EntryRow[];
+    return rows.map(rowToEntry);
+  } catch {
+    // FTS5 query failed — fall back to LIKE search on title and content
+    const likeQuery = `%${query.replace(/[%_]/g, '')}%`;
+    const stmt = db.prepare(`
+      SELECT * FROM entries
+      WHERE title LIKE @query OR content LIKE @query OR tags LIKE @query
+      ORDER BY updated_at DESC
+      LIMIT @limit
+    `);
+
+    const rows = stmt.all({ query: likeQuery, limit }) as EntryRow[];
+    return rows.map(rowToEntry);
+  }
 }
 
 /**

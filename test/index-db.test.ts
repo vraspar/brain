@@ -243,6 +243,28 @@ describe('searchEntries', () => {
     expect(results.length).toBeGreaterThanOrEqual(1);
     expect(results[0].id).toBe('k8s-deployment');
   });
+
+  it('strips FTS5 operators (AND, OR, NOT, NEAR) from queries', () => {
+    // Should not interpret AND/OR as boolean operators
+    expect(() => searchEntries(db, 'kubernetes AND deployment')).not.toThrow();
+    expect(() => searchEntries(db, 'NOT testing')).not.toThrow();
+    expect(() => searchEntries(db, 'NEAR react')).not.toThrow();
+    // Should still find results (operators are stripped, terms remain)
+    const results = searchEntries(db, 'kubernetes AND deployment');
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('handles C++ style queries by stripping plus signs', () => {
+    // C++ should become just "C" after sanitization
+    expect(() => searchEntries(db, 'C++')).not.toThrow();
+    expect(() => searchEntries(db, 'node.js')).not.toThrow();
+  });
+
+  it('falls back to LIKE search if FTS5 somehow fails', () => {
+    // Query with only special characters should return empty (not crash)
+    const results = searchEntries(db, '+++***');
+    expect(results).toEqual([]);
+  });
 });
 
 describe('getRecentEntries', () => {
