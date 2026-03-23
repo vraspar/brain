@@ -12,7 +12,7 @@ import {
   rebuildIndex,
 } from '../src/core/index-db.js';
 import { saveConfig } from '../src/core/config.js';
-import { getReadEntryIds, recordReceipt, getEntryStats } from '../src/core/receipts.js';
+import { getReadEntryIds, recordReceipt, getBulkEntryStats } from '../src/core/receipts.js';
 import { formatDigestSummary } from '../src/utils/output.js';
 import type { BrainConfig, DigestEntry, Entry } from '../src/types.js';
 
@@ -63,9 +63,12 @@ async function seedAndIndex(entries: Entry[]): Promise<void> {
     await writeEntry(repoDir, entry);
   }
   const db = createIndex(dbPath);
-  const scanned = await scanEntries(repoDir);
-  rebuildIndex(db, scanned);
-  db.close();
+  try {
+    const scanned = await scanEntries(repoDir);
+    rebuildIndex(db, scanned);
+  } finally {
+    db.close();
+  }
 }
 
 function toDigestEntries(entries: Entry[]): DigestEntry[] {

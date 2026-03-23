@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig, saveConfig } from '../core/config.js';
 import { createIndex, getDbPath, getRecentEntries } from '../core/index-db.js';
-import { getEntryStats, getReadEntryIds, getTopEntries } from '../core/receipts.js';
+import { getBulkEntryStats, getReadEntryIds, getTopEntries } from '../core/receipts.js';
 import { recordReceipt } from '../core/receipts.js';
 import { formatDigest, formatDigestSummary } from '../utils/output.js';
 import { parseTimeWindow } from '../utils/time.js';
@@ -56,9 +56,12 @@ export const digestCommand = new Command('digest')
         // Get recent entries from index
         const recentEntries = getRecentEntries(db, since);
 
+        // Scan all receipts once upfront (O(M) instead of O(N×M))
+        const bulkStats = getBulkEntryStats(config.local, options.since ?? '7d');
+
         // Build digest entries with access stats and new/updated classification
         let digestEntries: DigestEntry[] = recentEntries.map((entry) => {
-          const stats = getEntryStats(config.local, entry.id, options.since ?? '7d');
+          const stats = bulkStats.get(entry.id) ?? { accessCount: 0, uniqueReaders: 0 };
           const isNew = new Date(entry.created) >= since;
 
           return {

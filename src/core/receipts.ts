@@ -83,6 +83,29 @@ export function getEntryStats(
 }
 
 /**
+ * Get stats for all entries within a time period in a single pass.
+ * Returns a Map from entry ID to { accessCount, uniqueReaders }.
+ * Use this instead of calling getEntryStats() per entry to avoid O(N×M) scanning.
+ */
+export function getBulkEntryStats(
+  repoPath: string,
+  period: string,
+): Map<string, { accessCount: number; uniqueReaders: number }> {
+  const receipts = scanReceipts(repoPath, period);
+  const byEntry = groupByEntry(receipts);
+
+  const result = new Map<string, { accessCount: number; uniqueReaders: number }>();
+  for (const [entryId, entryReceipts] of byEntry.entries()) {
+    result.set(entryId, {
+      accessCount: entryReceipts.length,
+      uniqueReaders: new Set(entryReceipts.map((r) => r.reader)).size,
+    });
+  }
+
+  return result;
+}
+
+/**
  * Get the most accessed entries within a time period.
  */
 export function getTopEntries(repoPath: string, period: string, limit = 10): StatsResult[] {
