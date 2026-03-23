@@ -49,3 +49,8 @@ export interface StatsResult {
   uniqueReaders: number;
   period: string;
 }
+
+export interface SearchResult {
+  entry: Entry;
+  snippet: string;
+}

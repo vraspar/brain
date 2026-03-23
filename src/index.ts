@@ -12,6 +12,7 @@ import { listCommand } from './commands/list.js';
 import { statsCommand } from './commands/stats.js';
 import { syncCommand } from './commands/sync.js';
 import { serveCommand } from './commands/serve.js';
+import { retractCommand } from './commands/retract.js';
 
 const program = new Command();
 
@@ -33,5 +34,6 @@ program.addCommand(listCommand);
 program.addCommand(statsCommand);
 program.addCommand(syncCommand);
 program.addCommand(serveCommand);
+program.addCommand(retractCommand);
 
 program.parse();

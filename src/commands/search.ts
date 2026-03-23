@@ -1,14 +1,15 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createIndex, getDbPath, searchEntries } from '../core/index-db.js';
+import { createIndex, getDbPath, searchEntriesWithSnippets } from '../core/index-db.js';
 import { formatSearchResults } from '../utils/output.js';
 
 export const searchCommand = new Command('search')
   .description('Search the team brain for entries')
   .argument('<query>', 'Search query (full-text search)')
   .option('--limit <n>', 'Maximum results to return', '20')
-  .action(async (query: string, options: { limit: string }) => {
+  .option('--no-preview', 'Hide content preview snippets')
+  .action(async (query: string, options: { limit: string; preview: boolean }) => {
     const format = searchCommand.parent?.opts().format ?? 'text';
 
     try {
@@ -21,8 +22,14 @@ export const searchCommand = new Command('search')
           throw new Error('--limit must be a positive number.');
         }
 
-        const results = searchEntries(db, query, limit);
-        console.log(formatSearchResults(results, { format }));
+        const results = searchEntriesWithSnippets(db, query, limit);
+        const entries = results.map((r) => r.entry);
+
+        const snippets = options.preview
+          ? new Map(results.map((r) => [r.entry.id, r.snippet]))
+          : undefined;
+
+        console.log(formatSearchResults(entries, { format, snippets }));
       } finally {
         db.close();
       }
