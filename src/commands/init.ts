@@ -2,7 +2,8 @@ import readline from 'node:readline/promises';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { initBrain } from '../core/repo.js';
-import { createIndex, getDbPath } from '../core/index-db.js';
+import { scanEntries } from '../core/entry.js';
+import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 
 async function promptUser(question: string, hint?: string): Promise<string> {
   const rl = readline.createInterface({
@@ -65,10 +66,11 @@ export const initCommand = new Command('init')
 
       const config = await initBrain({ name, remote, author: options.author });
 
-      // Initialize empty search index
+      // Build search index with seed content
+      const entries = await scanEntries(config.local);
       const db = createIndex(getDbPath());
       try {
-        // Empty brain, no entries to index
+        rebuildIndex(db, entries);
       } finally {
         db.close();
       }
