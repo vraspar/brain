@@ -125,7 +125,7 @@ describe('joinBrain extracts hub name', () => {
 });
 
 describe('joinBrain error message', () => {
-  it('mentions connect and init in error when brain already exists', async () => {
+  it('throws with clear message when brain already exists', async () => {
     const remoteUrl = await createBrainRemote();
     await joinBrain(remoteUrl);
 
