@@ -93,4 +93,39 @@ describe('saveConfig and loadConfig', () => {
     saveConfig(testConfig);
     expect(fs.existsSync(brainDir)).toBe(true);
   });
+
+  it('strips credentials from remote URL on save', () => {
+    const configWithCreds: BrainConfig = {
+      remote: 'https://user:s3cret-token@github.com/org/brain.git',
+      local: '/home/user/.brain/repo',
+      author: 'alice',
+    };
+    saveConfig(configWithCreds);
+    const loaded = loadConfig();
+    expect(loaded.remote).not.toContain('user');
+    expect(loaded.remote).not.toContain('s3cret-token');
+    expect(loaded.remote).toContain('github.com/org/brain.git');
+  });
+
+  it('handles values with embedded double quotes', () => {
+    const configWithQuotes: BrainConfig = {
+      local: '/home/user/.brain/repo',
+      author: 'Alice "The Dev" Smith',
+      hubName: 'team "brain"',
+    };
+    saveConfig(configWithQuotes);
+    const loaded = loadConfig();
+    expect(loaded.author).toBe('Alice "The Dev" Smith');
+    expect(loaded.hubName).toBe('team "brain"');
+  });
+
+  it('handles values with backslashes (Windows paths)', () => {
+    const configWithBackslash: BrainConfig = {
+      local: 'C:\\Users\\alice\\.brain\\repo',
+      author: 'alice',
+    };
+    saveConfig(configWithBackslash);
+    const loaded = loadConfig();
+    expect(loaded.local).toBe('C:\\Users\\alice\\.brain\\repo');
+  });
 });

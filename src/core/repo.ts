@@ -199,9 +199,9 @@ export async function initBrain(options: InitBrainOptions): Promise<InitBrainRes
       }
     }
 
-    // 9. Save config
+    // 9. Save config (saveConfig auto-redacts credentials from remote URL)
     const config: BrainConfig = {
-      remote: options.remote,
+      remote: options.remote ? sanitizeUrl(options.remote) : undefined,
       local: repoDir,
       author,
       hubName: options.name,
