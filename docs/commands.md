@@ -118,13 +118,11 @@ brain connect https://github.com/acme/brain-hub.git
 
 ## brain join
 
-Alias for `brain connect`. Accepts the same arguments.
+Alias for `brain connect`. Supports the same arguments and flags.
 
 ```
-brain join <url>
+brain join <url> [--author <name>]
 ```
-
-Note: `brain join` does not support `--author`. Use `brain connect` for the full flag set.
 
 ---
 
