@@ -19,8 +19,11 @@ export const syncCommand = new Command('sync')
       // Rebuild index
       const entries = await scanEntries(config.local);
       const db = createIndex(getDbPath());
-      rebuildIndex(db, entries);
-      db.close();
+      try {
+        rebuildIndex(db, entries);
+      } finally {
+        db.close();
+      }
 
       if (format === 'json') {
         console.log(JSON.stringify({

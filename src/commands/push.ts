@@ -99,8 +99,11 @@ export const pushCommand = new Command('push')
       // Rebuild index
       const entries = await scanEntries(config.local);
       const db = createIndex(getDbPath());
-      rebuildIndex(db, entries);
-      db.close();
+      try {
+        rebuildIndex(db, entries);
+      } finally {
+        db.close();
+      }
 
       // Record receipt
       await recordReceipt(config.local, entry.id, config.author, 'cli');

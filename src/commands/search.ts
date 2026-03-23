@@ -15,15 +15,17 @@ export const searchCommand = new Command('search')
       loadConfig(); // validate brain is initialized
       const db = createIndex(getDbPath());
 
-      const limit = parseInt(options.limit, 10);
-      if (isNaN(limit) || limit < 1) {
-        throw new Error('--limit must be a positive number.');
+      try {
+        const limit = parseInt(options.limit, 10);
+        if (isNaN(limit) || limit < 1) {
+          throw new Error('--limit must be a positive number.');
+        }
+
+        const results = searchEntries(db, query, limit);
+        console.log(formatSearchResults(results, { format }));
+      } finally {
+        db.close();
       }
-
-      const results = searchEntries(db, query, limit);
-      db.close();
-
-      console.log(formatSearchResults(results, { format }));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {

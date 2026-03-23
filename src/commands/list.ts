@@ -17,21 +17,23 @@ export const listCommand = new Command('list')
       const db = createIndex(getDbPath());
 
       let entries: Entry[];
-      if (options.author) {
-        entries = getEntriesByAuthor(db, options.author);
-      } else {
-        entries = getAllEntries(db);
-      }
-
-      // Apply type filter
-      if (options.type) {
-        if (options.type !== 'guide' && options.type !== 'skill') {
-          throw new Error(`Invalid type "${options.type}". Must be "guide" or "skill".`);
+      try {
+        if (options.author) {
+          entries = getEntriesByAuthor(db, options.author);
+        } else {
+          entries = getAllEntries(db);
         }
-        entries = entries.filter((e) => e.type === options.type);
-      }
 
-      db.close();
+        // Apply type filter
+        if (options.type) {
+          if (options.type !== 'guide' && options.type !== 'skill') {
+            throw new Error(`Invalid type "${options.type}". Must be "guide" or "skill".`);
+          }
+          entries = entries.filter((e) => e.type === options.type);
+        }
+      } finally {
+        db.close();
+      }
 
       console.log(formatSearchResults(entries, { format }));
     } catch (error) {

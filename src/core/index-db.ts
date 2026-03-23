@@ -105,6 +105,18 @@ export function rebuildIndex(db: Database.Database, entries: Entry[]): void {
 export function searchEntries(db: Database.Database, query: string, limit = 20): Entry[] {
   if (!query.trim()) return [];
 
+  // Sanitize FTS5 query: strip quotes, wrap each term in double quotes
+  // to prevent special characters (*, AND, OR, NOT, NEAR, etc.) from
+  // being interpreted as FTS5 syntax
+  const sanitized = query
+    .replace(/['"(){}[\]*:^~!@#$%&+=|\\<>,;]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((term) => `"${term}"`)
+    .join(' ');
+
+  if (!sanitized) return [];
+
   const stmt = db.prepare(`
     SELECT e.*
     FROM entries e
@@ -114,7 +126,7 @@ export function searchEntries(db: Database.Database, query: string, limit = 20):
     LIMIT @limit
   `);
 
-  const rows = stmt.all({ query, limit }) as EntryRow[];
+  const rows = stmt.all({ query: sanitized, limit }) as EntryRow[];
   return rows.map(rowToEntry);
 }
 

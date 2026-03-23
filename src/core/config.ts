@@ -66,7 +66,7 @@ function parseYaml(content: string): BrainConfig {
 
   if (!result['remote'] || !result['local'] || !result['author']) {
     throw new Error(
-      'Invalid brain config: missing required fields (remote, local, author). Run "brain init" to set up.',
+      'Invalid brain config: missing required fields (remote, local, author). Run "brain join <url>" to set up.',
     );
   }
 
@@ -83,7 +83,7 @@ export function loadConfig(): BrainConfig {
   const configPath = getConfigPath();
 
   if (!fs.existsSync(configPath)) {
-    throw new Error(`Brain not configured. Run "brain init" to set up. Expected config at: ${configPath}`);
+    throw new Error(`Brain not configured. Run "brain join <url>" to connect to a team brain. Expected config at: ${configPath}`);
   }
 
   const content = fs.readFileSync(configPath, 'utf-8');

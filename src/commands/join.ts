@@ -16,8 +16,11 @@ export const joinCommand = new Command('join')
 
       // Build the search index
       const db = createIndex(getDbPath());
-      rebuildIndex(db, entries);
-      db.close();
+      try {
+        rebuildIndex(db, entries);
+      } finally {
+        db.close();
+      }
 
       if (format === 'json') {
         console.log(JSON.stringify({

@@ -9,6 +9,7 @@ import { showCommand } from './commands/show.js';
 import { listCommand } from './commands/list.js';
 import { statsCommand } from './commands/stats.js';
 import { syncCommand } from './commands/sync.js';
+import { serveCommand } from './commands/serve.js';
 
 const program = new Command();
 
@@ -27,5 +28,6 @@ program.addCommand(showCommand);
 program.addCommand(listCommand);
 program.addCommand(statsCommand);
 program.addCommand(syncCommand);
+program.addCommand(serveCommand);
 
 program.parse();

@@ -54,6 +54,18 @@ export async function startServer(): Promise<void> {
 
   await initializeIndex(context);
 
+  // Graceful shutdown: close DB to prevent WAL corruption
+  const shutdown = () => {
+    try {
+      context.db.close();
+    } catch {
+      // DB may already be closed
+    }
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

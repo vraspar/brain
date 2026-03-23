@@ -22,14 +22,18 @@ export const statsCommand = new Command('stats')
 
       // Resolve entry titles from the index
       const db = createIndex(getDbPath());
-      const resolvedStats: StatsResult[] = rawStats.map((stat) => {
-        const entry = getEntryById(db, stat.entryId);
-        return {
-          ...stat,
-          title: entry?.title ?? stat.entryId,
-        };
-      });
-      db.close();
+      let resolvedStats: StatsResult[];
+      try {
+        resolvedStats = rawStats.map((stat) => {
+          const entry = getEntryById(db, stat.entryId);
+          return {
+            ...stat,
+            title: entry?.title ?? stat.entryId,
+          };
+        });
+      } finally {
+        db.close();
+      }
 
       if (format === 'json') {
         console.log(JSON.stringify(resolvedStats, null, 2));

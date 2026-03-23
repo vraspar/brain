@@ -15,8 +15,12 @@ export const showCommand = new Command('show')
       const config = loadConfig();
       const db = createIndex(getDbPath());
 
-      const entry = getEntryById(db, entryId);
-      db.close();
+      let entry;
+      try {
+        entry = getEntryById(db, entryId);
+      } finally {
+        db.close();
+      }
 
       if (!entry) {
         throw new Error(
