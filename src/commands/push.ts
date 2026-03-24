@@ -16,6 +16,7 @@ import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
 import { extractTags } from '../utils/tags.js';
 import type { EntryType } from '../types.js';
+
 /**
  * Resolve file paths from arguments, supporting glob patterns.
  * Returns an array of absolute file paths.
