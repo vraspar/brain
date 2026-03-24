@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { cloneRepo, getFileLastModified, validateUrl } from '../utils/git.js';
+import { extractTags } from '../utils/tags.js';
 import {
   createEntry,
   extractTitle,
@@ -35,17 +36,6 @@ const META_FILES = new Set([
 const EXCLUDED_DIRS = new Set([
   'node_modules', '.git', '.github', '.vscode', 'dist', 'build',
   'coverage', '__pycache__', '.tox', 'vendor', 'target',
-]);
-
-const KNOWN_TECH_TERMS = new Set([
-  'typescript', 'javascript', 'python', 'react', 'node', 'docker',
-  'kubernetes', 'k8s', 'aws', 'azure', 'gcp', 'terraform', 'ci/cd',
-  'cicd', 'git', 'api', 'rest', 'graphql', 'sql', 'nosql', 'redis',
-  'postgres', 'mongodb', 'nginx', 'linux', 'bash', 'helm', 'jenkins',
-  'github', 'gitlab', 'vscode', 'eslint', 'prettier', 'vitest', 'jest',
-  'webpack', 'vite', 'nextjs', 'express', 'fastify', 'rust', 'go',
-  'java', 'csharp', 'dotnet', 'angular', 'vue', 'svelte', 'tailwind',
-  'css', 'html', 'npm', 'yarn', 'pnpm', 'deno', 'bun',
 ]);
 
 /**
@@ -95,20 +85,6 @@ export function computeImportFreshness(
   if (ageDays <= 30) return 'fresh';
   if (ageDays <= 90) return 'aging';
   return 'stale';
-}
-
-/**
- * Extract auto-tags from content by matching known tech terms.
- */
-function extractTags(content: string): string[] {
-  const words = content.toLowerCase().match(/\b[a-z][a-z0-9/.-]+\b/g) ?? [];
-  const found = new Set<string>();
-  for (const word of words) {
-    if (KNOWN_TECH_TERMS.has(word) && found.size < 5) {
-      found.add(word);
-    }
-  }
-  return [...found];
 }
 
 /**
