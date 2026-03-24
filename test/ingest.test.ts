@@ -10,6 +10,7 @@ import {
   isRemoteUrl,
   discoverCandidates,
   importCandidates,
+  runIngest,
 } from '../src/core/ingest.js';
 import { createIndex, getEntryById, rebuildIndex } from '../src/core/index-db.js';
 import { scanEntries, createEntry, writeEntry } from '../src/core/entry.js';
@@ -581,6 +582,38 @@ describe('importCandidates', () => {
       const imported = entries.find(e => e.title === 'Docker Snippet');
       expect(imported!.type).toBe('skill');
       expect(imported!.filePath.startsWith('skills/')).toBe(true);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+// --- runIngest URL validation ---
+
+describe('runIngest', () => {
+  it('rejects URLs starting with dash (git option injection)', async () => {
+    const db = createIndex(dbPath);
+    try {
+      await expect(
+        runIngest({
+          source: '--upload-pack=malicious',
+          author: 'testuser',
+        }, repoDir, db),
+      ).rejects.toThrow('URLs must not start with "-"');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('rejects non-existent local paths', async () => {
+    const db = createIndex(dbPath);
+    try {
+      await expect(
+        runIngest({
+          source: path.join(tempDir, 'nonexistent'),
+          author: 'testuser',
+        }, repoDir, db),
+      ).rejects.toThrow('Source path does not exist');
     } finally {
       db.close();
     }

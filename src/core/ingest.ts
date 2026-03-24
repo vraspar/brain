@@ -320,9 +320,11 @@ export async function runIngest(
   let tempDir: string | undefined;
   const progress = options.onProgress ?? (() => {});
 
+  // Reject sources that look like git flags (option injection)
+  validateUrl(options.source);
+
   // Resolve source
   if (isRemoteUrl(options.source)) {
-    validateUrl(options.source);
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'brain-ingest-'));
     progress('Cloning repository...');
     // Full clone (not shallow) for accurate git log dates
