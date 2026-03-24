@@ -150,6 +150,20 @@ export async function getLastCommitDate(repoPath: string): Promise<Date> {
   }
 }
 
+/**
+ * Get the last modified date of a specific file from git history.
+ * Returns undefined if the file has no git history (e.g., shallow clone).
+ */
+export async function getFileLastModified(repoPath: string, filePath: string): Promise<Date | undefined> {
+  const git = createGit(repoPath);
+  try {
+    const log = await git.log({ file: filePath, maxCount: 1 });
+    return log.latest ? new Date(log.latest.date) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getCurrentUser(repoPath: string): Promise<string> {
   const git = createGit(repoPath);
   try {

@@ -12,6 +12,9 @@ export interface EntryFrontmatter {
   related_repos?: string[];
   related_tools?: string[];
   summary?: string;
+  source_repo?: string;
+  archived_at?: string; // ISO 8601
+  archived_reason?: string;
 }
 
 export interface Entry extends EntryFrontmatter {
@@ -54,3 +57,33 @@ export interface SearchResult {
   entry: Entry;
   snippet: string;
 }
+
+export interface IngestCandidate {
+  sourcePath: string;
+  title: string;
+  tags: string[];
+  content: string;
+  freshness: 'fresh' | 'aging' | 'stale';
+  sourceCreated?: string;
+  sourceUpdated?: string;
+  skip?: { reason: string };
+}
+
+export interface IngestResult {
+  imported: string[];
+  skipped: { path: string; reason: string }[];
+  source: string;
+  sourceRepoName: string;
+}
+
+export interface FreshnessScore {
+  score: number; // 0.0 to 1.0
+  label: 'fresh' | 'aging' | 'stale';
+  components: {
+    recency: number;
+    usage: number;
+    volatility: number;
+  };
+}
+
+export type FreshnessLabel = FreshnessScore['label'];

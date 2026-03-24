@@ -54,6 +54,7 @@ export function parseEntry(filePath: string, content: string): Entry {
     related_repos: asStringArray(data['related_repos']),
     related_tools: asStringArray(data['related_tools']),
     summary: data['summary'] ? String(data['summary']) : undefined,
+    source_repo: data['source_repo'] ? String(data['source_repo']) : undefined,
   };
 }
 
@@ -79,6 +80,7 @@ export function serializeEntry(entry: Omit<Entry, 'id' | 'filePath'>): string {
   if (entry.summary) frontmatter['summary'] = entry.summary;
   if (entry.related_repos?.length) frontmatter['related_repos'] = entry.related_repos;
   if (entry.related_tools?.length) frontmatter['related_tools'] = entry.related_tools;
+  if (entry.source_repo) frontmatter['source_repo'] = entry.source_repo;
 
   return matter.stringify(entry.content, frontmatter);
 }
