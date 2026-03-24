@@ -1,7 +1,8 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import type { DigestEntry, Entry, StatsResult } from '../types.js';
+import type { DigestEntry, Entry, FreshnessLabel, StatsResult } from '../types.js';
 import { formatDate, relativeTime } from './time.js';
+import { freshnessIndicator } from '../core/freshness.js';
 
 export interface FormatOptions {
   format?: 'text' | 'json';
@@ -126,15 +127,19 @@ export function formatStats(stats: StatsResult[], options: FormatOptions = {}): 
 
 export function formatSearchResults(
   entries: Entry[],
-  options: FormatOptions & { snippets?: Map<string, string> } = {},
+  options: FormatOptions & {
+    snippets?: Map<string, string>;
+    freshness?: Map<string, FreshnessLabel>;
+  } = {},
 ): string {
   if (options.format === 'json') {
-    if (options.snippets) {
-      const withSnippets = entries.map((e) => ({
+    if (options.snippets || options.freshness) {
+      const enriched = entries.map((e) => ({
         ...e,
-        preview: options.snippets!.get(e.id) ?? '',
+        ...(options.snippets ? { preview: options.snippets.get(e.id) ?? '' } : {}),
+        ...(options.freshness ? { freshness: options.freshness.get(e.id) ?? null } : {}),
       }));
-      return JSON.stringify(withSnippets, null, 2);
+      return JSON.stringify(enriched, null, 2);
     }
     return JSON.stringify(entries, null, 2);
   }
@@ -144,10 +149,13 @@ export function formatSearchResults(
   }
 
   const showPreview = options.snippets && options.snippets.size > 0;
+  const showFreshness = options.freshness && options.freshness.size > 0;
 
   const head = showPreview
     ? ['Title', 'Author', 'Type', 'Tags', 'Preview']
-    : ['Title', 'Author', 'Type', 'Tags', 'Status'];
+    : showFreshness
+      ? ['Title', 'Author', 'Type', 'Freshness', 'Tags']
+      : ['Title', 'Author', 'Type', 'Tags', 'Status'];
 
   const table = new Table({
     head,
@@ -165,7 +173,6 @@ export function formatSearchResults(
 
     if (showPreview) {
       const snippet = options.snippets!.get(entry.id) ?? '';
-      // Strip FTS5 highlight markers and truncate
       const cleanSnippet = snippet.replace(/[«»]/g, '').slice(0, 60);
       table.push([
         entry.title,
@@ -173,6 +180,15 @@ export function formatSearchResults(
         entry.type,
         entry.tags.slice(0, 3).join(', '),
         chalk.dim(cleanSnippet),
+      ]);
+    } else if (showFreshness) {
+      const label = options.freshness!.get(entry.id);
+      table.push([
+        entry.title,
+        entry.author,
+        entry.type,
+        label ? freshnessIndicator(label) : statusColor(entry.status),
+        entry.tags.slice(0, 3).join(', '),
       ]);
     } else {
       table.push([

@@ -3,7 +3,8 @@ import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
 import { syncBrain } from '../core/repo.js';
 import { scanEntries } from '../core/entry.js';
-import { createIndex, getDbPath, rebuildIndex } from '../core/index-db.js';
+import { createIndex, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
+import { buildUsageStatsMap } from '../core/freshness-stats.js';
 
 export const syncCommand = new Command('sync')
   .description('Pull latest changes and rebuild the index')
@@ -21,6 +22,10 @@ export const syncCommand = new Command('sync')
       const db = createIndex(getDbPath());
       try {
         rebuildIndex(db, entries);
+
+        // Update freshness scores after rebuilding index
+        const statsMap = buildUsageStatsMap(config.local, '30d');
+        updateFreshnessScores(db, statsMap);
       } finally {
         db.close();
       }

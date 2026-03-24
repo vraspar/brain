@@ -1,10 +1,10 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createIndex, getAllEntries, getDbPath, getEntriesByAuthor } from '../core/index-db.js';
+import { createIndex, getAllEntries, getDbPath, getEntriesByAuthor, getEntriesWithFreshness } from '../core/index-db.js';
 import { getReadEntryIds } from '../core/receipts.js';
 import { formatSearchResults } from '../utils/output.js';
-import type { Entry } from '../types.js';
+import type { Entry, FreshnessLabel } from '../types.js';
 
 interface ListOptions {
   type?: string;
@@ -12,6 +12,8 @@ interface ListOptions {
   tag?: string[];
   mine?: boolean;
   unread?: boolean;
+  stale?: boolean;
+  fresh?: boolean;
 }
 
 export const listCommand = new Command('list')
@@ -21,6 +23,8 @@ export const listCommand = new Command('list')
   .option('--tag <tag...>', 'Filter by tag (repeatable)')
   .option('--mine', 'Show only your own entries')
   .option('--unread', 'Show only entries you have not read')
+  .option('--stale', 'Show only stale entries (🔴)')
+  .option('--fresh', 'Show only fresh entries (🟢)')
   .action(async (options: ListOptions) => {
     const format = listCommand.parent?.opts().format ?? 'text';
 
@@ -29,14 +33,59 @@ export const listCommand = new Command('list')
       const db = createIndex(getDbPath());
 
       let entries: Entry[];
+      let freshnessMap: Map<string, FreshnessLabel> | undefined;
+
       try {
         // Resolve --mine to --author with current user
         const authorFilter = options.mine ? config.author : options.author;
 
-        if (authorFilter) {
+        // Use freshness-aware query if stale/fresh filter is active
+        const useFreshness = options.stale || options.fresh;
+
+        if (useFreshness) {
+          const withFreshness = getEntriesWithFreshness(db);
+
+          // Build freshness map for display
+          freshnessMap = new Map<string, FreshnessLabel>();
+          for (const e of withFreshness) {
+            if (e.freshnessLabel) {
+              freshnessMap.set(e.id, e.freshnessLabel as FreshnessLabel);
+            }
+          }
+
+          // Apply freshness filter
+          if (options.stale) {
+            entries = withFreshness.filter((e) => e.freshnessLabel === 'stale');
+          } else {
+            entries = withFreshness.filter((e) => e.freshnessLabel === 'fresh');
+          }
+
+          // Apply author filter
+          if (authorFilter) {
+            entries = entries.filter((e) => e.author === authorFilter);
+          }
+        } else if (authorFilter) {
           entries = getEntriesByAuthor(db, authorFilter);
         } else {
           entries = getAllEntries(db);
+        }
+
+        // Try to populate freshness map for display even without filter
+        if (!freshnessMap) {
+          try {
+            const withFreshness = getEntriesWithFreshness(db);
+            const hasScores = withFreshness.some((e) => e.freshnessLabel !== null);
+            if (hasScores) {
+              freshnessMap = new Map<string, FreshnessLabel>();
+              for (const e of withFreshness) {
+                if (e.freshnessLabel) {
+                  freshnessMap.set(e.id, e.freshnessLabel as FreshnessLabel);
+                }
+              }
+            }
+          } catch {
+            // Freshness columns may not exist yet
+          }
         }
 
         // Apply type filter
@@ -64,7 +113,7 @@ export const listCommand = new Command('list')
         db.close();
       }
 
-      console.log(formatSearchResults(entries, { format }));
+      console.log(formatSearchResults(entries, { format, freshness: freshnessMap }));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {

@@ -62,10 +62,21 @@ export function createIndex(dbPath: string): Database.Database {
   `);
 
   // Freshness cache columns (added in v0.2)
-  try { db.exec('ALTER TABLE entries ADD COLUMN freshness_score REAL'); } catch { /* exists */ }
-  try { db.exec('ALTER TABLE entries ADD COLUMN freshness_label TEXT'); } catch { /* exists */ }
-  try { db.exec('ALTER TABLE entries ADD COLUMN read_count_30d INTEGER DEFAULT 0'); } catch { /* exists */ }
-  try { db.exec('ALTER TABLE entries ADD COLUMN source_repo TEXT'); } catch { /* exists */ }
+  const existingColumns = new Set(
+    (db.pragma('table_info(entries)') as { name: string }[]).map((c) => c.name),
+  );
+  if (!existingColumns.has('freshness_score')) {
+    db.exec('ALTER TABLE entries ADD COLUMN freshness_score REAL');
+  }
+  if (!existingColumns.has('freshness_label')) {
+    db.exec('ALTER TABLE entries ADD COLUMN freshness_label TEXT');
+  }
+  if (!existingColumns.has('read_count_30d')) {
+    db.exec('ALTER TABLE entries ADD COLUMN read_count_30d INTEGER DEFAULT 0');
+  }
+  if (!existingColumns.has('source_repo')) {
+    db.exec('ALTER TABLE entries ADD COLUMN source_repo TEXT');
+  }
 
   // Entry links table for auto-linking (added in v0.2)
   db.exec(`
