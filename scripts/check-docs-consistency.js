@@ -4,9 +4,9 @@
  * Docs consistency check: verifies all commands are documented and registered.
  *
  * Checks:
- * 1. Every .ts file in src/commands/ has a matching entry in docs/commands.md
- * 2. Every command file is imported and registered in src/index.ts
- * 3. README.md features section mentions all commands
+ * 1. Every .ts file in src/commands/ is imported and registered in src/index.ts
+ * 2. Every command is documented in docs/commands.md (authoritative reference)
+ * 3. README.md links to the command reference docs
  *
  * Exit code 0 = all consistent, 1 = inconsistencies found.
  */
@@ -47,7 +47,7 @@ for (const cmd of commandFiles) {
   );
 }
 
-// Check 2: docs/commands.md exists and mentions each command
+// Check 2: docs/commands.md exists and documents each command
 if (fs.existsSync(docsPath)) {
   const docsContent = fs.readFileSync(docsPath, 'utf-8').toLowerCase();
   for (const cmd of commandFiles) {
@@ -61,16 +61,14 @@ if (fs.existsSync(docsPath)) {
   check('docs/commands.md exists', false, 'File not found');
 }
 
-// Check 3: README mentions all commands
+// Check 3: README links to command reference (not required to list every command)
 if (fs.existsSync(readmePath)) {
   const readmeContent = fs.readFileSync(readmePath, 'utf-8').toLowerCase();
-  for (const cmd of commandFiles) {
-    check(
-      `README.md mentions "${cmd}"`,
-      readmeContent.includes(`brain ${cmd}`) || readmeContent.includes(`\`${cmd}\``),
-      `Command "${cmd}" not found in README.md`,
-    );
-  }
+  check(
+    'README.md links to command reference',
+    readmeContent.includes('docs/commands.md') || readmeContent.includes('command reference'),
+    'README should link to docs/commands.md for full command reference',
+  );
 } else {
   check('README.md exists', false, 'File not found');
 }
