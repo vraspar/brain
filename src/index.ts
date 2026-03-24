@@ -2,7 +2,6 @@
 
 import { Command } from 'commander';
 import { initCommand } from './commands/init.js';
-import { joinCommand } from './commands/join.js';
 import { connectCommand } from './commands/connect.js';
 import { pushCommand } from './commands/push.js';
 import { digestCommand } from './commands/digest.js';
@@ -25,7 +24,6 @@ program
 
 program.addCommand(initCommand);
 program.addCommand(connectCommand);
-program.addCommand(joinCommand, { hidden: true });
 program.addCommand(pushCommand);
 program.addCommand(digestCommand);
 program.addCommand(searchCommand);
