@@ -1,8 +1,12 @@
 # Roadmap
 
-## Current (v0.2.0)
+## Current (v0.3.0)
 
-- 12 CLI commands: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve`, `join` (hidden alias)
+- 16 CLI commands: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve`, `ingest`, `prune`, `restore`, `trail`
+- Repo ingest: `brain ingest` imports docs from remote repos or local directories with freshness scoring at import time
+- Freshness scoring: multiplicative formula (recency base, usage boost, volatility modifier) with Fresh/Aging/Stale labels
+- Knowledge pruning: `brain prune` archives stale entries to `_archive/`, reversible with `brain restore`
+- Knowledge trails: `brain trail` explores connected entries via auto-computed links
 - Flexible push with positional args, glob patterns, directory input, multi-file batch
 - Title/type/tag auto-detection from content (frontmatter, H1, filename fallback chain)
 - SQLite FTS5 full-text search with BM25 ranking, prefix matching, contextual snippets
@@ -10,16 +14,12 @@
 - MCP server with 5 tools and 2 resources (stdio transport)
 - Read receipt analytics tracking CLI and MCP reads
 - Git-backed storage with markdown + YAML frontmatter
-- `brain retract` for removing entries
 - URL validation (option injection prevention) and credential sanitization
 - JSON output mode for all commands
 
-## In Progress (v0.3.0)
+## In Progress
 
-- **CI/CD pipeline** -- GitHub Actions for build, test, and lint on every PR. Makes Brain "official" for team adoption.
-- **`brain ingest <repo-url>`** -- Clone a remote repo, scan for markdown files, batch-import as entries. Solves the cold-start problem: seed a brain from existing documentation in one command. Supports `--path` filter, `--dry-run` preview, and `--include-meta` to include README/CHANGELOG.
-- **Freshness scoring** -- Entries scored as Fresh/Aging/Stale based on update recency and read frequency. Visible in `brain list` and `brain search`. Formula: Fresh = updated in 30d or 3+ reads in 30d; Aging = updated 30-90d ago with 1-2 reads; Stale = not updated in 90d and 0 reads in 30d.
-- **`brain prune`** -- Surface stale entries for review or archival. Entries imported via `brain ingest` get freshness scores at import time.
+- **CI/CD pipeline** -- GitHub Actions for build, test, and lint on every PR.
 - **Levenshtein fuzzy search** -- Typo-tolerant search for on-call scenarios where exact phrasing is unknown.
 
 ## Planned (v1.0)
@@ -32,7 +32,6 @@
 - **`get_recommendations` MCP tool** -- Proactive knowledge surfacing. Extract keywords from agent context and return relevant entries without explicit search.
 - **`update_entry` MCP tool** -- Partial field updates (title, tags, status) so agents can maintain entries.
 - **`brain health`** -- HEART metrics (Happiness, Engagement, Adoption, Retention, Task success) computed from receipt data.
-- **Implicit auto-linking** -- Detect references between entries and surface related content.
 
 ## Exploring
 

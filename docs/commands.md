@@ -418,6 +418,174 @@ brain retract old-deployment-guide --format json
 
 ---
 
+## brain ingest
+
+Import documentation from a git repository or local directory. Solves the cold-start problem by batch-importing existing docs.
+
+```
+brain ingest <source> [--path <glob>] [--exclude <glob>...] [--dry-run] [--type <type>] [--source-tag] [--max <n>] [--overwrite]
+```
+
+| Argument/Flag | Required | Description |
+|---------------|----------|-------------|
+| `<source>` | Yes | Git repo URL or local directory path. |
+| `--path <glob>` | No | Restrict scan to paths matching glob (e.g. `docs/**`). |
+| `--exclude <glob>` | No | Exclude paths matching glob. Repeatable. |
+| `--dry-run` | No | Preview what would be imported without writing. |
+| `--type <type>` | No | Force entry type for all imports (`guide` or `skill`). |
+| `--source-tag` | No | Auto-tag entries with the source repo name. |
+| `--max <n>` | No | Maximum files to import (default: 100). |
+| `--overwrite` | No | Overwrite existing entries with the same slug. |
+
+### Behavior
+
+1. Clones the source repo (full clone for accurate file dates) or reads from local directory
+2. Scans for `.md` files, applies `--path` and `--exclude` filters
+3. Skips non-documentation files (README at root, CHANGELOG, LICENSE) unless `--overwrite`
+4. Auto-detects title, type, and tags per file using the standard detection chain
+5. Computes freshness score at import time based on file dates from the source
+6. Writes entries to the brain repo, commits, and pushes
+7. Cleans up temp clone (if remote source)
+
+### Examples
+
+```bash
+# Import from a remote repo
+brain ingest https://github.com/acme/platform.git
+
+# Restrict to docs/ directory
+brain ingest https://github.com/acme/platform.git --path "docs/**"
+
+# Preview without importing
+brain ingest https://github.com/acme/platform.git --dry-run
+
+# Import from local directory with source tagging
+brain ingest ./path/to/repo --source-tag
+
+# Overwrite existing entries
+brain ingest https://github.com/acme/platform.git --overwrite --max 50
+```
+
+---
+
+## brain prune
+
+Archive stale entries based on freshness scoring.
+
+```
+brain prune [--dry-run] [--threshold <score>] [--force] [--include-type <type>] [--min-age <period>]
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--dry-run` | No | Preview what would be pruned without archiving. |
+| `--threshold <score>` | No | Freshness score cutoff, 0.0-1.0 (default: 0.3). Entries below this are pruned. |
+| `--force` | No | Skip confirmation prompt. |
+| `--include-type <type>` | No | Only consider entries of this type. |
+| `--min-age <period>` | No | Only prune entries older than this (default: `30d`). |
+
+### Freshness scoring
+
+Entries are scored using a multiplicative formula:
+- **Recency** is the base score (decays over time)
+- **Usage** is a boost multiplier (1.0-2.0x based on recent reads)
+- **Volatility** adjusts decay speed (tags like "k8s" decay faster than "architecture")
+
+Labels: Fresh (score >= 0.6), Aging (0.3-0.6), Stale (< 0.3).
+
+### Behavior
+
+1. Computes freshness scores for all entries
+2. Filters by type, min-age, and threshold
+3. Shows a preview table with titles, scores, and read counts
+4. On confirmation: moves files to `_archive/` with `status: archived` in frontmatter
+5. Commits and pushes, rebuilds index
+
+### Examples
+
+```bash
+brain prune --dry-run                    # preview
+brain prune --threshold 0.2 --force      # aggressive, no prompt
+brain prune --include-type guide         # only prune guides
+brain prune --min-age 60d               # only entries older than 60 days
+```
+
+---
+
+## brain restore
+
+Restore an archived entry back to the brain.
+
+```
+brain restore <entry-id> [--force]
+brain restore --list
+```
+
+| Argument/Flag | Required | Description |
+|---------------|----------|-------------|
+| `<entry-id>` | Yes (unless `--list`) | Entry ID (slug) to restore. |
+| `--force` | No | Skip confirmation prompt. |
+| `--list` | No | List all archived entries instead of restoring. |
+
+### Behavior
+
+1. Finds the entry in `_archive/guides/` or `_archive/skills/`
+2. Prompts for confirmation (unless `--force`)
+3. Moves the file back to its original location
+4. Sets `status` back to `active`, removes `archived_at` and `archived_reason` from frontmatter
+5. Commits and pushes, rebuilds index
+
+### Examples
+
+```bash
+brain restore --list                       # see what's archived
+brain restore old-deployment-guide         # restore with confirmation
+brain restore old-deployment-guide --force # no prompt
+```
+
+---
+
+## brain trail
+
+Explore connected knowledge entries for a topic.
+
+```
+brain trail <topic> [--limit <n>]
+```
+
+| Argument/Flag | Required | Description |
+|---------------|----------|-------------|
+| `<topic>` | Yes | Topic to explore. |
+| `--limit <n>` | No | Maximum entries to show (default: 20). |
+
+### How links are computed
+
+Entry relationships are auto-computed during index rebuild using 4 signals:
+- Tag overlap between entries
+- Title word similarity
+- Same author
+- Content cross-references (entry IDs mentioned in other entries)
+
+### Example
+
+```bash
+brain trail kubernetes
+```
+
+```
+🔗 Knowledge trail: kubernetes (4 entries)
+
+  k8s-deployment-guide — K8s Deployment Guide
+    guide by alice · kubernetes, k8s
+    → related: helm-chart-patterns, ci-pipeline-setup
+
+  helm-chart-patterns — Helm Chart Patterns
+    guide by bob · kubernetes, helm
+    → related: k8s-deployment-guide
+```
+
+---
+
 ## brain sync
 
 Pull latest changes from the remote and rebuild the search index.

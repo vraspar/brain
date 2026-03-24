@@ -61,8 +61,12 @@ brain sync
 
 ## Features
 
-- **12 CLI commands**: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve` (`join` as hidden alias)
-- **Flexible push**: positional file args, glob patterns (`./docs/*.md`), directory input, multi-file batch with per-file error reporting
+- **16 CLI commands**: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve`, `ingest`, `prune`, `restore`, `trail` (+ `join` as hidden alias)
+- **Repo ingest**: `brain ingest <repo-url>` imports docs from external repos with freshness scoring at import time
+- **Freshness scoring**: entries scored as Fresh/Aging/Stale based on recency and read frequency (multiplicative formula)
+- **Knowledge pruning**: `brain prune` archives stale entries to `_archive/`, reversible with `brain restore`
+- **Knowledge trails**: `brain trail <topic>` explores connected entries via auto-computed links
+- **Flexible push**: positional file args, glob patterns (`./docs/*.md`), directory input, multi-file batch
 - **Auto-detection**: title from H1/frontmatter/filename, type from frontmatter, tags from a 56-term tech dictionary
 - **Full-text search**: SQLite FTS5 with BM25 ranking, prefix matching, contextual snippets
 - **Digest filters**: `--tag`, `--type`, `--author`, `--mine`, `--unread`, `--summary`
@@ -203,6 +207,67 @@ brain retract <entry-id> [--force]
 - `--force`: Skip confirmation prompt.
 
 Prompts for confirmation unless `--force` is passed. The file is deleted from disk and the deletion is committed with message `Retract <type>: <title>`.
+
+### `brain ingest <source>`
+
+Import documentation from a git repository or local directory.
+
+```
+brain ingest <source> [--path <glob>] [--exclude <glob>...] [--dry-run] [--type <type>] [--source-tag] [--max <n>] [--overwrite]
+```
+
+- `<source>`: Git repo URL or local directory path.
+- `--path`: Restrict scan to paths matching glob.
+- `--exclude`: Exclude paths matching glob (repeatable).
+- `--dry-run`: Preview what would be imported without writing anything.
+- `--type`: Force entry type for all imports.
+- `--source-tag`: Auto-tag entries with the source repo name.
+- `--max`: Maximum files to import (default: 100).
+- `--overwrite`: Overwrite existing entries with the same slug.
+
+Entries receive freshness scores at import time based on file dates from the source repository.
+
+### `brain prune`
+
+Archive stale entries based on freshness scoring.
+
+```
+brain prune [--dry-run] [--threshold <score>] [--force] [--include-type <type>] [--min-age <period>]
+```
+
+- `--dry-run`: Preview what would be pruned.
+- `--threshold`: Freshness score cutoff, 0.0-1.0 (default: 0.3).
+- `--force`: Skip confirmation prompt.
+- `--include-type`: Only consider entries of this type.
+- `--min-age`: Only prune entries older than this (default: `30d`).
+
+Archived entries move to `_archive/` with `status: archived` in frontmatter. They are hidden from search but recoverable with `brain restore`.
+
+### `brain restore [entry-id]`
+
+Restore an archived entry back to the brain.
+
+```
+brain restore <entry-id> [--force]
+brain restore --list
+```
+
+- `--force`: Skip confirmation prompt.
+- `--list`: List all archived entries.
+
+Restores the file from `_archive/` to its original location, sets status back to `active`, and removes archive metadata.
+
+### `brain trail <topic>`
+
+Explore connected knowledge entries for a topic.
+
+```
+brain trail <topic> [--limit <n>]
+```
+
+- `--limit`: Maximum entries (default: 20).
+
+Uses FTS5 search plus auto-computed entry links (tag overlap, title similarity, shared author, content cross-references) to build a knowledge trail starting from the topic.
 
 ### `brain sync`
 
@@ -359,6 +424,9 @@ Your markdown content here.
 └── repo/                        # Cloned git repository
     ├── guides/                  # Guide entries (.md)
     ├── skills/                  # Skill entries (.md)
+    ├── _archive/                # Pruned entries (reversible)
+    │   ├── guides/
+    │   └── skills/
     └── _analytics/
         └── receipts/
             └── YYYY-MM-DD/      # Daily directories
@@ -385,20 +453,27 @@ src/
 ├── commands/
 │   ├── init.ts           # brain init (interactive wizard)
 │   ├── connect.ts        # brain connect
-│   ├── join.ts           # brain join (alias for connect)
 │   ├── push.ts           # brain push (includes auto-tagger)
 │   ├── digest.ts         # brain digest
 │   ├── search.ts         # brain search
 │   ├── show.ts           # brain show
 │   ├── list.ts           # brain list
 │   ├── retract.ts        # brain retract
+│   ├── ingest.ts         # brain ingest
+│   ├── prune.ts          # brain prune
+│   ├── restore.ts        # brain restore
+│   ├── trail.ts          # brain trail
 │   ├── stats.ts          # brain stats
 │   ├── sync.ts           # brain sync
 │   └── serve.ts          # brain serve
 ├── core/
 │   ├── config.ts         # Config load/save (~/.brain/config.yaml)
 │   ├── entry.ts          # Entry parsing, serialization, scanning
+│   ├── freshness.ts      # Freshness scoring (multiplicative formula)
+│   ├── freshness-stats.ts # Usage stats bridge for freshness
 │   ├── index-db.ts       # SQLite FTS5 index (create, search, query)
+│   ├── ingest.ts         # Repo scanning and batch import
+│   ├── links.ts          # Auto-computed entry relationships
 │   ├── receipts.ts       # Read receipt recording and aggregation
 │   └── repo.ts           # Git repo operations (init, join, sync)
 ├── mcp/

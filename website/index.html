@@ -111,11 +111,23 @@ Top: K8s Patterns (12 reads, 4 unique)</div>
         </div>
         <div class="card">
           <h3>FTS5 search</h3>
-          <p>SQLite FTS5 with BM25 ranking. Sub-millisecond search. Works offline. The index is a disposable cache — rebuilt from source on every sync.</p>
+          <p>SQLite FTS5 with BM25 ranking, prefix matching, and contextual snippets. Sub-millisecond search. Works offline.</p>
         </div>
         <div class="card">
           <h3>MCP-native</h3>
           <p>Your AI agent already knows what your team knows. 5 tools and 2 resources exposed via Model Context Protocol. <code>brain serve</code> starts the server.</p>
+        </div>
+        <div class="card">
+          <h3>Repo ingest</h3>
+          <p>Seed your brain from existing repos. <code>brain ingest &lt;url&gt;</code> scans for markdown, auto-detects titles and tags, and scores freshness at import.</p>
+        </div>
+        <div class="card">
+          <h3>Freshness scoring</h3>
+          <p>Entries scored as Fresh, Aging, or Stale based on recency and read frequency. <code>brain prune</code> archives what's stale. <code>brain restore</code> brings it back.</p>
+        </div>
+        <div class="card">
+          <h3>Knowledge trails</h3>
+          <p>Auto-computed links between entries. <code>brain trail &lt;topic&gt;</code> follows connections across your team's knowledge.</p>
         </div>
       </div>
 

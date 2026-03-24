@@ -167,6 +167,51 @@ brain sync
    Total entries indexed: 16
 ```
 
+## Import existing docs
+
+If your team already has documentation in other repos, import it in one command:
+
+```bash
+brain ingest https://github.com/acme/platform.git --path "docs/**"
+```
+
+Preview first with `--dry-run`:
+
+```bash
+brain ingest https://github.com/acme/platform.git --dry-run
+```
+
+Each file gets a freshness score based on its age and content type.
+
+## Prune stale content
+
+Over time, some entries become outdated. Check what's stale:
+
+```bash
+brain prune --dry-run
+```
+
+Archive stale entries (they move to `_archive/` and can be restored later):
+
+```bash
+brain prune
+```
+
+Restore a pruned entry if you need it back:
+
+```bash
+brain restore --list                   # see what's archived
+brain restore old-deployment-guide     # bring it back
+```
+
+## Explore connected knowledge
+
+Follow a topic across related entries:
+
+```bash
+brain trail kubernetes
+```
+
 ## Next steps
 
 - [Full CLI reference](commands.md) — all commands, flags, and edge cases

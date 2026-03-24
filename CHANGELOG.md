@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-24
+
+### Added
+
+- `brain ingest <source>` command to import documentation from remote repos or local directories
+- Ingest supports `--path`, `--exclude`, `--dry-run`, `--source-tag`, `--max`, `--overwrite` flags
+- Freshness scoring system: entries scored as Fresh/Aging/Stale using multiplicative formula (recency base, usage boost, volatility modifier)
+- `brain prune` command to archive stale entries based on freshness scores
+- Prune supports `--dry-run`, `--threshold`, `--force`, `--include-type`, `--min-age` flags
+- `_archive/` directory for reversible entry archival
+- `brain restore` command to recover archived entries
+- Restore supports `--list` to view archived entries and `--force` to skip confirmation
+- `brain trail <topic>` command for exploring connected knowledge entries
+- Auto-computed entry links based on tag overlap, title similarity, shared author, and content cross-references
+- Freshness scores cached in SQLite for fast retrieval
+
+### Removed
+
+- `brain join` command removed (use `brain connect` instead)
+
 ## [0.2.0] - 2026-03-23
 
 ### Added
