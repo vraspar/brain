@@ -172,9 +172,9 @@ export const ingestCommand = new Command('ingest')
           const staleCount = candidates.filter(c => !c.skip && c.freshness === 'stale').length;
           const importedCount = result.imported.length;
           if (importedCount > 0 && staleCount / importedCount > 0.2) {
+            const pct = Math.round((staleCount / importedCount) * 100);
             console.log('');
-            console.log(chalk.yellow(`   ⚠ ${staleCount} of ${importedCount} imported entries are stale.`));
-            console.log(chalk.dim('   Run: brain prune --dry-run'));
+            console.log(chalk.yellow(`   💡 ${pct}% of imported entries are stale. Run 'brain prune --dry-run' to review.`));
           }
 
           console.log('');
