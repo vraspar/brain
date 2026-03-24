@@ -11,7 +11,7 @@ git clone https://github.com/vraspar/brain.git
 cd brain && npm install && npm run build && npm link
 ```
 
-Requires Node.js 18+ and git.
+Requires Node.js 20+ and git.
 
 ## Usage
 
