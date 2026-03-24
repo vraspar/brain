@@ -1,6 +1,8 @@
 # brain
 
-A CLI tool and MCP server for sharing technical knowledge across a team. Entries are stored as markdown files in a git repository, indexed locally with SQLite FTS5 for full-text search, and exposed to AI agents via the Model Context Protocol.
+[![CI](https://github.com/vraspar/brain/actions/workflows/ci.yml/badge.svg)](https://github.com/vraspar/brain/actions/workflows/ci.yml)
+
+A CLI tool and MCP server for sharing technical knowledge across a team.Entries are stored as markdown files in a git repository, indexed locally with SQLite FTS5 for full-text search, and exposed to AI agents via the Model Context Protocol.
 
 ## How it works
 
