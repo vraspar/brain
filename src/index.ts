@@ -12,6 +12,9 @@ import { statsCommand } from './commands/stats.js';
 import { syncCommand } from './commands/sync.js';
 import { serveCommand } from './commands/serve.js';
 import { retractCommand } from './commands/retract.js';
+import { trailCommand } from './commands/trail.js';
+import { pruneCommand } from './commands/prune.js';
+import { ingestCommand } from './commands/ingest.js';
 
 const program = new Command();
 
@@ -33,5 +36,8 @@ program.addCommand(statsCommand);
 program.addCommand(syncCommand);
 program.addCommand(serveCommand);
 program.addCommand(retractCommand);
+program.addCommand(trailCommand);
+program.addCommand(pruneCommand);
+program.addCommand(ingestCommand);
 
 program.parse();

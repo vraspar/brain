@@ -1,7 +1,9 @@
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import type { Entry, SearchResult } from '../types.js';
+import type { Entry, FreshnessScore, SearchResult } from '../types.js';
+import { computeFreshness, type UsageStats } from './freshness.js';
+import { computeEntryLinks } from './links.js';
 
 /**
  * Returns the default path for the brain cache database: ~/.brain/cache.db
@@ -59,6 +61,28 @@ export function createIndex(dbPath: string): Database.Database {
     END;
   `);
 
+  // Freshness cache columns (added in v0.2)
+  try { db.exec('ALTER TABLE entries ADD COLUMN freshness_score REAL'); } catch { /* exists */ }
+  try { db.exec('ALTER TABLE entries ADD COLUMN freshness_label TEXT'); } catch { /* exists */ }
+  try { db.exec('ALTER TABLE entries ADD COLUMN read_count_30d INTEGER DEFAULT 0'); } catch { /* exists */ }
+  try { db.exec('ALTER TABLE entries ADD COLUMN source_repo TEXT'); } catch { /* exists */ }
+
+  // Entry links table for auto-linking (added in v0.2)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entry_links (
+      source_id TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      link_type TEXT NOT NULL DEFAULT 'related',
+      score REAL NOT NULL DEFAULT 0.0,
+      reason TEXT,
+      PRIMARY KEY (source_id, target_id, link_type),
+      FOREIGN KEY (source_id) REFERENCES entries(id) ON DELETE CASCADE,
+      FOREIGN KEY (target_id) REFERENCES entries(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_entry_links_source ON entry_links(source_id);
+    CREATE INDEX IF NOT EXISTS idx_entry_links_target ON entry_links(target_id);
+  `);
+
   return db;
 }
 
@@ -96,6 +120,9 @@ export function rebuildIndex(db: Database.Database, entries: Entry[]): void {
   });
 
   transaction(entries);
+
+  // Compute entry-to-entry relationships after all entries are indexed
+  computeEntryLinks(db);
 }
 
 /**
@@ -263,6 +290,60 @@ interface EntryRow {
   summary: string | null;
   content: string;
   file_path: string;
+  freshness_score?: number | null;
+  freshness_label?: string | null;
+  read_count_30d?: number | null;
+  source_repo?: string | null;
+}
+
+/**
+ * Update cached freshness scores for all entries.
+ * Call after sync or before prune to ensure scores are current.
+ */
+export function updateFreshnessScores(
+  db: Database.Database,
+  statsMap: Map<string, UsageStats>,
+  now: Date = new Date(),
+): void {
+  const entries = getAllEntries(db);
+
+  const updateStmt = db.prepare(`
+    UPDATE entries
+    SET freshness_score = @score,
+        freshness_label = @label,
+        read_count_30d = @readCount
+    WHERE id = @id
+  `);
+
+  const transaction = db.transaction(() => {
+    for (const entry of entries) {
+      const stats = statsMap.get(entry.id);
+      const score = computeFreshness(entry, stats, now);
+
+      updateStmt.run({
+        id: entry.id,
+        score: score.score,
+        label: score.label,
+        readCount: stats?.accessCount30d ?? 0,
+      });
+    }
+  });
+
+  transaction();
+}
+
+/**
+ * Get all entries with their cached freshness scores.
+ */
+export function getEntriesWithFreshness(db: Database.Database): (Entry & { freshnessScore: number | null; freshnessLabel: string | null; readCount30d: number })[] {
+  const stmt = db.prepare('SELECT * FROM entries ORDER BY freshness_score ASC');
+  const rows = stmt.all() as EntryRow[];
+  return rows.map((row) => ({
+    ...rowToEntry(row),
+    freshnessScore: row.freshness_score ?? null,
+    freshnessLabel: row.freshness_label ?? null,
+    readCount30d: row.read_count_30d ?? 0,
+  }));
 }
 
 function rowToEntry(row: EntryRow): Entry {
