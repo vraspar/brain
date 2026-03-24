@@ -14,30 +14,8 @@ import {
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
+import { extractTags } from '../utils/tags.js';
 import type { EntryType } from '../types.js';
-
-const KNOWN_TECH_TERMS = new Set([
-  'typescript', 'javascript', 'python', 'react', 'node', 'docker',
-  'kubernetes', 'k8s', 'aws', 'azure', 'gcp', 'terraform', 'ci/cd',
-  'cicd', 'git', 'api', 'rest', 'graphql', 'sql', 'nosql', 'redis',
-  'postgres', 'mongodb', 'nginx', 'linux', 'bash', 'helm', 'jenkins',
-  'github', 'gitlab', 'vscode', 'eslint', 'prettier', 'vitest', 'jest',
-  'webpack', 'vite', 'nextjs', 'express', 'fastify', 'rust', 'go',
-  'java', 'csharp', 'dotnet', 'angular', 'vue', 'svelte', 'tailwind',
-  'css', 'html', 'npm', 'yarn', 'pnpm', 'deno', 'bun',
-]);
-
-function extractTags(content: string): string[] {
-  const words = content.toLowerCase().match(/\b[a-z][a-z0-9/.-]+\b/g) ?? [];
-  const found = new Set<string>();
-  for (const word of words) {
-    if (KNOWN_TECH_TERMS.has(word) && found.size < 5) {
-      found.add(word);
-    }
-  }
-  return [...found];
-}
-
 /**
  * Resolve file paths from arguments, supporting glob patterns.
  * Returns an array of absolute file paths.

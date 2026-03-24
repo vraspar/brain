@@ -276,7 +276,7 @@ export function getEntriesByAuthor(db: Database.Database, author: string): Entry
 
 // --- Internal helpers ---
 
-interface EntryRow {
+export interface EntryRow {
   id: string;
   title: string;
   type: string;
@@ -346,7 +346,7 @@ export function getEntriesWithFreshness(db: Database.Database): (Entry & { fresh
   }));
 }
 
-function rowToEntry(row: EntryRow): Entry {
+export function rowToEntry(row: EntryRow): Entry {
   return {
     id: row.id,
     title: row.title,

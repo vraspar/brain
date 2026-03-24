@@ -1,45 +1,11 @@
 import type Database from 'better-sqlite3';
 import type { Entry } from '../types.js';
-import { getAllEntries, searchEntries } from './index-db.js';
+import { getAllEntries, searchEntries, rowToEntry, type EntryRow } from './index-db.js';
 
 interface LinkCandidate {
   type: string;
   score: number;
   reason: string;
-}
-
-interface EntryRow {
-  id: string;
-  title: string;
-  type: string;
-  author: string;
-  created_at: string;
-  updated_at: string;
-  tags: string | null;
-  status: string;
-  related_repos: string | null;
-  related_tools: string | null;
-  summary: string | null;
-  content: string;
-  file_path: string;
-}
-
-function rowToEntry(row: EntryRow): Entry {
-  return {
-    id: row.id,
-    title: row.title,
-    type: row.type as Entry['type'],
-    author: row.author,
-    created: row.created_at,
-    updated: row.updated_at,
-    tags: row.tags ? row.tags.split(',').filter(Boolean) : [],
-    status: (row.status as Entry['status']) ?? 'active',
-    related_repos: row.related_repos ? row.related_repos.split(',').filter(Boolean) : undefined,
-    related_tools: row.related_tools ? row.related_tools.split(',').filter(Boolean) : undefined,
-    summary: row.summary ?? undefined,
-    content: row.content,
-    filePath: row.file_path,
-  };
 }
 
 /**
