@@ -4,7 +4,7 @@ This guide walks through installing Brain CLI, creating or joining a brain, and 
 
 ## Prerequisites
 
-- Node.js 18 or later
+- Node.js 20 or later
 - git configured with `user.name` (used as your author identity)
 
 ## Install

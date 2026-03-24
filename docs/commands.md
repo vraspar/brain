@@ -326,16 +326,18 @@ To find entry IDs, use `brain search` or `brain list`.
 List all entries, optionally filtered.
 
 ```
-brain list [--type guide|skill] [--author <name>] [--tag <tag>] [--mine] [--unread]
+brain list [--type guide|skill] [--author <name>] [--tag <tag>...] [--mine] [--unread] [--stale] [--fresh]
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--type <type>` | No | Filter: `guide` or `skill`. |
 | `--author <name>` | No | Filter by author name (exact match). |
-| `--tag <tag>` | No | Filter by tag. |
+| `--tag <tag>` | No | Filter by tag. Repeatable (entries matching any tag are included). |
 | `--mine` | No | Show only your own entries. |
 | `--unread` | No | Show only entries you have not read. |
+| `--stale` | No | Show only stale entries (freshness score below threshold). |
+| `--fresh` | No | Show only fresh entries. |
 
 ### Examples
 
@@ -345,6 +347,8 @@ brain list --type skill        # only skills
 brain list --author alice      # only alice's entries
 brain list --mine --unread     # your unread entries
 brain list --tag docker        # entries tagged 'docker'
+brain list --stale             # stale entries needing review
+brain list --fresh             # healthy entries
 brain list --format json       # JSON array of entries
 ```
 

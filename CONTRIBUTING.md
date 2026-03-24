@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 18 or later
+- Node.js 20 or later
 - git
 - npm
 
