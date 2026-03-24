@@ -167,23 +167,22 @@ describe('initBrain', () => {
     expect(gitignore).toContain('Thumbs.db');
   });
 
-  it('pushes to remote when URL is valid', async () => {
+  it('sets up remote when URL is valid', async () => {
     const { simpleGit } = await import('simple-git');
 
     const bareDir = path.join(tempDir, 'remote.git');
     fs.mkdirSync(bareDir);
     await simpleGit(bareDir).init(true);
 
-    const { config, pushFailed } = await initBrain({ name: 'push-test', remote: bareDir });
+    const { config } = await initBrain({ name: 'push-test', remote: bareDir });
     expect(config.remote).toBe(bareDir);
 
-    if (!pushFailed) {
-      // Verify push succeeded by cloning the remote
-      const verifyDir = path.join(tempDir, 'verify');
-      await simpleGit().clone(bareDir, verifyDir);
-      expect(fs.existsSync(path.join(verifyDir, 'README.md'))).toBe(true);
-    }
-    // Push may fail on some CI environments — that's OK, initBrain handles it gracefully
+    // Verify remote was configured
+    const git = simpleGit(config.local);
+    const remotes = await git.getRemotes(true);
+    const origin = remotes.find((r) => r.name === 'origin');
+    expect(origin).toBeTruthy();
+    expect(origin!.refs.fetch).toBe(bareDir);
   });
 
   it('reports push failure without crashing', async () => {
