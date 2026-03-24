@@ -40,6 +40,7 @@
 - **Agent auto-capture** -- Agents publish learnings via MCP, tagged `agent-drafted`, surfaced in `brain review` for human approval.
 - **Brain federations** -- Query across multiple team brains without merging repos.
 - **Slack/Discord integration** -- Push and search from messaging platforms.
+- **AI-enhanced workflows** -- Improved MCP tool descriptions for agents, example prompts for ingest/push/search workflows, `brain suggest` command for workflow recommendations. Philosophy: the agent is already smart, we just surface what's possible.
 
 ## Not Planned
 
