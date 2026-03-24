@@ -14,7 +14,7 @@ function createGit(repoPath: string): SimpleGit {
  * Validate a URL is not a git flag injection attempt.
  * URLs starting with '-' would be interpreted as git options.
  */
-function validateUrl(url: string): void {
+export function validateUrl(url: string): void {
   if (url.startsWith('-')) {
     throw new Error(`Invalid URL "${url}". URLs must not start with "-".`);
   }

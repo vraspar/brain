@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { cloneRepo, getFileLastModified } from '../utils/git.js';
+import { cloneRepo, getFileLastModified, validateUrl } from '../utils/git.js';
 import {
   createEntry,
   extractTitle,
@@ -23,6 +23,7 @@ export interface IngestOptions {
   maxFiles?: number;
   overwrite?: boolean;
   author: string;
+  onProgress?: (message: string) => void;
 }
 
 const META_FILES = new Set([
@@ -308,11 +309,15 @@ export async function runIngest(
 ): Promise<{ candidates: IngestCandidate[]; result?: IngestResult }> {
   let sourceDir: string;
   let tempDir: string | undefined;
+  const progress = options.onProgress ?? (() => {});
 
   // Resolve source
   if (isRemoteUrl(options.source)) {
+    validateUrl(options.source);
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'brain-ingest-'));
-    await cloneRepo(options.source, tempDir, true);
+    progress('Cloning repository...');
+    // Full clone (not shallow) for accurate git log dates
+    await cloneRepo(options.source, tempDir, false);
     sourceDir = tempDir;
   } else {
     sourceDir = path.resolve(options.source);
@@ -322,16 +327,20 @@ export async function runIngest(
   }
 
   try {
+    progress('Scanning for markdown files...');
     const candidates = await discoverCandidates(sourceDir, options);
+    progress(`Found ${candidates.length} files`);
 
     if (options.dryRun) {
       return { candidates };
     }
 
+    progress('Importing entries...');
     const result = await importCandidates(candidates, brainRepoPath, db, options);
     return { candidates, result };
   } finally {
     if (tempDir) {
+      progress('Cleaning up temp directory...');
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   }

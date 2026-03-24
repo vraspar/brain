@@ -72,6 +72,10 @@ export const ingestCommand = new Command('ingest')
 
       const db = createIndex(getDbPath());
       try {
+        const onProgress = format !== 'json'
+          ? (msg: string) => console.log(chalk.dim(`   ${msg}`))
+          : undefined;
+
         const { candidates, result } = await runIngest({
           source,
           pathFilter: options.path,
@@ -82,6 +86,7 @@ export const ingestCommand = new Command('ingest')
           maxFiles,
           overwrite: options.overwrite,
           author: config.author,
+          onProgress,
         }, config.local, db);
 
         const importable = candidates.filter(c => !c.skip);
