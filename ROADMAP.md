@@ -2,7 +2,7 @@
 
 ## Current (v0.3.0)
 
-- 16 CLI commands: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve`, `ingest`, `prune`, `restore`, `trail`
+- 15 CLI commands: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve`, `ingest`, `prune`, `restore`, `trail`
 - Repo ingest: `brain ingest` imports docs from remote repos or local directories with freshness scoring at import time
 - Freshness scoring: multiplicative formula (recency base, usage boost, volatility modifier) with Fresh/Aging/Stale labels
 - Knowledge pruning: `brain prune` archives stale entries to `_archive/`, reversible with `brain restore`

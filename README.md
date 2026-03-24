@@ -29,7 +29,7 @@ npm run build
 npm link    # makes 'brain' available globally
 ```
 
-Requires Node.js 18+ and git.
+Requires Node.js 20+ and git.
 
 ## Quick start
 
