@@ -144,12 +144,14 @@ export const ingestCommand = new Command('ingest')
         }
 
         if (format === 'json') {
+          const staleCount = candidates.filter(c => !c.skip && c.freshness === 'stale').length;
           console.log(JSON.stringify({
             status: 'ingested',
             source,
             sourceRepoName: result.sourceRepoName,
             imported: result.imported.length,
             skipped: result.skipped.length,
+            staleCount,
             skippedDetails: result.skipped,
           }, null, 2));
         } else {
@@ -164,6 +166,15 @@ export const ingestCommand = new Command('ingest')
             if (result.skipped.length > 5) {
               console.log(chalk.dim(`     ... and ${result.skipped.length - 5} more`));
             }
+          }
+
+          // Check stale ratio and suggest prune
+          const staleCount = candidates.filter(c => !c.skip && c.freshness === 'stale').length;
+          const importedCount = result.imported.length;
+          if (importedCount > 0 && staleCount / importedCount > 0.2) {
+            console.log('');
+            console.log(chalk.yellow(`   ⚠ ${staleCount} of ${importedCount} imported entries are stale.`));
+            console.log(chalk.dim('   Run: brain prune --dry-run'));
           }
 
           console.log('');
