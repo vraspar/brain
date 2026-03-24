@@ -69,11 +69,17 @@ describe('shouldIncludeFile', () => {
     expect(shouldIncludeFile('guides/deploy.md')).toBe(true);
   });
 
-  it('excludes README and meta files', () => {
+  it('excludes root-level README and meta files', () => {
     expect(shouldIncludeFile('README.md')).toBe(false);
     expect(shouldIncludeFile('CHANGELOG.md')).toBe(false);
     expect(shouldIncludeFile('LICENSE.md')).toBe(false);
     expect(shouldIncludeFile('CONTRIBUTING.md')).toBe(false);
+  });
+
+  it('includes nested README files as documentation', () => {
+    expect(shouldIncludeFile('docs/README.md')).toBe(true);
+    expect(shouldIncludeFile('guides/readme.md')).toBe(true);
+    expect(shouldIncludeFile('api/v2/README.md')).toBe(true);
   });
 
   it('excludes node_modules and build dirs', () => {
@@ -129,8 +135,8 @@ describe('computeImportFreshness', () => {
     expect(computeImportFreshness(stale)).toBe('stale');
   });
 
-  it('returns fresh for undefined date', () => {
-    expect(computeImportFreshness(undefined)).toBe('fresh');
+  it('returns aging for undefined date (conservative default)', () => {
+    expect(computeImportFreshness(undefined)).toBe('aging');
   });
 });
 

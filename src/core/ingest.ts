@@ -54,7 +54,10 @@ const KNOWN_TECH_TERMS = new Set([
  */
 export function shouldIncludeFile(relativePath: string): boolean {
   const filename = path.basename(relativePath).toLowerCase();
-  if (META_FILES.has(filename)) return false;
+  const isRootLevel = !relativePath.includes('/') && !relativePath.includes('\\');
+
+  // Only exclude meta files at root level — nested READMEs are documentation
+  if (isRootLevel && META_FILES.has(filename)) return false;
 
   const parts = relativePath.split(/[/\\]/);
   if (parts.some(p => EXCLUDED_DIRS.has(p))) return false;
@@ -84,7 +87,7 @@ export function matchGlob(filePath: string, pattern: string): boolean {
 export function computeImportFreshness(
   sourceUpdated: Date | undefined,
 ): 'fresh' | 'aging' | 'stale' {
-  if (!sourceUpdated) return 'fresh';
+  if (!sourceUpdated) return 'aging';
 
   const ageMs = Date.now() - sourceUpdated.getTime();
   const ageDays = ageMs / (24 * 60 * 60 * 1000);
