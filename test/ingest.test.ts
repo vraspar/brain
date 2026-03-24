@@ -259,6 +259,44 @@ describe('discoverCandidates', () => {
     expect(valid?.skip).toBeUndefined();
   });
 
+  it('skips files larger than 1MB', async () => {
+    // Create a file just over 1MB
+    const largeContent = 'x'.repeat(1_048_577);
+    writeSourceDoc('docs/huge.md', largeContent);
+    writeSourceDoc('docs/small.md', '# Small\n\nContent.');
+
+    const candidates = await discoverCandidates(sourceDir, {
+      source: sourceDir,
+      author: 'testuser',
+    });
+
+    const huge = candidates.find(c => c.sourcePath === 'docs/huge.md');
+    const small = candidates.find(c => c.sourcePath === 'docs/small.md');
+
+    expect(huge?.skip?.reason).toMatch(/file too large/);
+    expect(small?.skip).toBeUndefined();
+  });
+
+  // Symlink test skipped on Windows — requires elevated privileges
+  // and behaves inconsistently across Windows versions
+  it.skipIf(process.platform === 'win32')('skips symbolic links', async () => {
+    writeSourceDoc('docs/real.md', '# Real\n\nContent.');
+    const linkPath = path.join(sourceDir, 'docs', 'link.md');
+    const targetPath = path.join(sourceDir, 'docs', 'real.md');
+    fs.symlinkSync(targetPath, linkPath);
+
+    const candidates = await discoverCandidates(sourceDir, {
+      source: sourceDir,
+      author: 'testuser',
+    });
+
+    const link = candidates.find(c => c.sourcePath === 'docs/link.md');
+    const real = candidates.find(c => c.sourcePath === 'docs/real.md');
+
+    expect(link?.skip?.reason).toBe('symbolic link');
+    expect(real?.skip).toBeUndefined();
+  });
+
   it('extracts title from frontmatter', async () => {
     writeSourceDoc('docs/guide.md', '---\ntitle: My Guide\n---\n\nContent.');
 

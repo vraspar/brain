@@ -182,9 +182,39 @@ export async function discoverCandidates(
   const maxFiles = options.maxFiles ?? 100;
   const cappedFiles = files.slice(0, maxFiles);
 
+  const MAX_FILE_SIZE = 1_048_576; // 1MB
+
   const candidates: IngestCandidate[] = [];
   for (const filePath of cappedFiles) {
     const fullPath = path.join(sourceDir, filePath);
+
+    // Skip symlinks to avoid following links to unexpected targets
+    const lstat = fs.lstatSync(fullPath);
+    if (lstat.isSymbolicLink()) {
+      candidates.push({
+        sourcePath: filePath,
+        title: '',
+        tags: [],
+        content: '',
+        freshness: 'aging',
+        skip: { reason: 'symbolic link' },
+      });
+      continue;
+    }
+
+    // Skip oversized files
+    if (lstat.size > MAX_FILE_SIZE) {
+      candidates.push({
+        sourcePath: filePath,
+        title: '',
+        tags: [],
+        content: '',
+        freshness: 'aging',
+        skip: { reason: `file too large (${(lstat.size / 1024 / 1024).toFixed(1)}MB)` },
+      });
+      continue;
+    }
+
     const raw = fs.readFileSync(fullPath, 'utf-8');
 
     if (!raw.trim()) {
