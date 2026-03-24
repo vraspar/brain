@@ -122,7 +122,7 @@ function scanMarkdownFiles(rootDir: string, currentDir: string = ''): string[] {
     const relativePath = currentDir ? `${currentDir}/${entry.name}` : entry.name;
     if (entry.isDirectory()) {
       results.push(...scanMarkdownFiles(rootDir, relativePath));
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+    } else if ((entry.isFile() || entry.isSymbolicLink()) && entry.name.endsWith('.md')) {
       results.push(relativePath);
     }
   }
