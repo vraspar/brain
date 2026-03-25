@@ -6,11 +6,13 @@ import { extractTags } from '../utils/tags.js';
 import {
   createEntry,
   extractTitle,
+  generateEntryId,
+  generateUniqueEntryId,
   parseInputContent,
   titleFromFilename,
   writeEntry,
 } from './entry.js';
-import { getEntryById } from './index-db.js';
+import { getAllEntries, getEntryById } from './index-db.js';
 import type { Entry, EntryType, IngestCandidate, IngestResult } from '../types.js';
 import type Database from 'better-sqlite3';
 
@@ -242,28 +244,33 @@ export async function importCandidates(
   const imported: string[] = [];
   const skipped: { path: string; reason: string }[] = [];
 
+  // Build set of existing IDs for collision detection
+  const existingEntries = getAllEntries(db);
+  const existingIds = new Set(existingEntries.map(e => e.id));
+
   for (const candidate of candidates) {
     if (candidate.skip) {
       skipped.push({ path: candidate.sourcePath, reason: candidate.skip.reason });
       continue;
     }
 
-    // Check for duplicates
-    const slug = candidate.title.toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+    // Generate slug and check for pre-existing entries in the brain
+    let slug: string;
+    try {
+      const baseSlug = generateEntryId(candidate.title);
 
-    if (!slug) {
+      // If the base slug exists in the DB (not just in this batch),
+      // skip unless --overwrite is set
+      const preExisting = getEntryById(db, baseSlug);
+      if (preExisting && !options.overwrite) {
+        skipped.push({ path: candidate.sourcePath, reason: `duplicate slug "${baseSlug}"` });
+        continue;
+      }
+
+      // Generate unique slug handling intra-batch collisions
+      slug = generateUniqueEntryId(candidate.title, existingIds);
+    } catch {
       skipped.push({ path: candidate.sourcePath, reason: 'cannot generate slug from title' });
-      continue;
-    }
-
-    const existing = getEntryById(db, slug);
-    if (existing && !options.overwrite) {
-      skipped.push({ path: candidate.sourcePath, reason: `duplicate slug "${slug}"` });
       continue;
     }
 
@@ -284,9 +291,13 @@ export async function importCandidates(
       tags,
     });
 
-    // Override status and add source metadata
+    const dirName = (options.type ?? 'guide') === 'skill' ? 'skills' : 'guides';
+
+    // Override status, ID (for collision handling), and source metadata
     const entryWithMeta: Entry = {
       ...entry,
+      id: slug,
+      filePath: `${dirName}/${slug}.md`,
       status,
       source_repo: repoName,
     };
@@ -297,6 +308,7 @@ export async function importCandidates(
     }
 
     await writeEntry(brainRepoPath, entryWithMeta);
+    existingIds.add(entryWithMeta.id);
     imported.push(candidate.sourcePath);
   }
 

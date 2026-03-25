@@ -147,6 +147,21 @@ export function generateEntryId(title: string): string {
   return slug;
 }
 
+/**
+ * Generate a unique entry ID by appending -2, -3, etc. if the slug already exists.
+ * Pass a set of existing IDs to check against.
+ */
+export function generateUniqueEntryId(title: string, existingIds: Set<string>): string {
+  const baseSlug = generateEntryId(title);
+  if (!existingIds.has(baseSlug)) return baseSlug;
+
+  let counter = 2;
+  while (existingIds.has(`${baseSlug}-${counter}`)) {
+    counter++;
+  }
+  return `${baseSlug}-${counter}`;
+}
+
 interface CreateEntryOptions {
   title: string;
   type: EntryType;

@@ -13,7 +13,7 @@ import {
   runIngest,
 } from '../src/core/ingest.js';
 import { createIndex, getEntryById, rebuildIndex } from '../src/core/index-db.js';
-import { scanEntries, createEntry, writeEntry } from '../src/core/entry.js';
+import { scanEntries, createEntry, writeEntry, generateUniqueEntryId } from '../src/core/entry.js';
 import { saveConfig } from '../src/core/config.js';
 import type { BrainConfig, IngestCandidate } from '../src/types.js';
 
@@ -618,6 +618,72 @@ describe('runIngest', () => {
           author: 'testuser',
         }, repoDir, db),
       ).rejects.toThrow('Source path does not exist');
+    } finally {
+      db.close();
+    }
+  });
+});
+
+// --- generateUniqueEntryId ---
+
+describe('generateUniqueEntryId', () => {
+  it('returns base slug when no collision', () => {
+    const existing = new Set<string>();
+    expect(generateUniqueEntryId('Docker Guide', existing)).toBe('docker-guide');
+  });
+
+  it('appends -2 on first collision', () => {
+    const existing = new Set(['docker-guide']);
+    expect(generateUniqueEntryId('Docker Guide', existing)).toBe('docker-guide-2');
+  });
+
+  it('appends -3 when -2 also exists', () => {
+    const existing = new Set(['docker-guide', 'docker-guide-2']);
+    expect(generateUniqueEntryId('Docker Guide', existing)).toBe('docker-guide-3');
+  });
+
+  it('handles many collisions', () => {
+    const existing = new Set(['setup', 'setup-2', 'setup-3', 'setup-4']);
+    expect(generateUniqueEntryId('Setup', existing)).toBe('setup-5');
+  });
+});
+
+// --- importCandidates slug collision ---
+
+describe('importCandidates slug collision', () => {
+  it('auto-deduplicates slugs within a batch', async () => {
+    const db = createIndex(dbPath);
+    try {
+      const candidates: IngestCandidate[] = [
+        {
+          sourcePath: 'docs/setup.md',
+          title: 'Setup Guide',
+          tags: [],
+          content: 'First setup guide.',
+          freshness: 'fresh',
+        },
+        {
+          sourcePath: 'other/setup.md',
+          title: 'Setup Guide',
+          tags: [],
+          content: 'Second setup guide from different source.',
+          freshness: 'fresh',
+        },
+      ];
+
+      const result = await importCandidates(candidates, repoDir, db, {
+        source: 'test-source',
+        author: 'testuser',
+      });
+
+      expect(result.imported).toHaveLength(2);
+      expect(result.skipped).toHaveLength(0);
+
+      // Verify both entries exist with different IDs
+      const entries = await scanEntries(repoDir);
+      const ids = entries.map(e => e.id);
+      expect(ids).toContain('setup-guide');
+      expect(ids).toContain('setup-guide-2');
     } finally {
       db.close();
     }
