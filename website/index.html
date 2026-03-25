@@ -60,14 +60,22 @@
           <div class="terminal" aria-label="Terminal showing brain init command">
             <div><span class="prompt">$ </span><span class="command">brain init --name "My Team"</span></div>
             <div class="output" style="white-space:pre">
-✅ Brain "My Team" is ready!
-   Local:  ~/.brain/repo
-   Author: alice</div>
+✅ Brain "My Team" is ready!</div>
           </div>
         </div>
 
         <div>
-          <div class="step-label">2. Share</div>
+          <div class="step-label">2. Import</div>
+          <div class="terminal" aria-label="Terminal showing brain ingest command">
+            <div><span class="prompt">$ </span><span class="command">brain ingest https://github.com/acme/docs.git</span></div>
+            <div class="output" style="white-space:pre">
+✅ Ingested 24 entries from acme/docs
+   💡 8% stale. Run 'brain prune --dry-run' to review.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="step-label">3. Share</div>
           <div class="terminal" aria-label="Terminal showing brain push command">
             <div><span class="prompt">$ </span><span class="command">brain push ./guide.md</span></div>
             <div class="output" style="white-space:pre">
@@ -77,7 +85,7 @@
         </div>
 
         <div class="step-full">
-          <div class="step-label">3. Discover</div>
+          <div class="step-label">4. Discover</div>
           <div class="terminal" aria-label="Terminal showing brain search command">
             <div><span class="prompt">$ </span><span class="command">brain search "kubernetes"</span></div>
             <div class="output" style="white-space:pre">

@@ -6,6 +6,16 @@
 
   var DEMO_SEQUENCE = [
     {
+      command: 'brain ingest https://github.com/acme/docs.git',
+      output:
+        '🔍 Scanning https://github.com/acme/docs.git...\n' +
+        '   Found 32 documentation files\n' +
+        '\n' +
+        '✅ Ingested 24 entries from acme/docs\n' +
+        '   ⚠ 8 skipped (duplicate slug)',
+      pauseAfter: 2500,
+    },
+    {
       command: 'brain search "kubernetes"',
       output:
         'Found 3 results:\n' +
@@ -24,18 +34,6 @@
         '✅ Pushed: Docker Multi-Stage Builds\n' +
         '   Tags: docker (auto-detected)',
       pauseAfter: 2000,
-    },
-    {
-      command: 'brain digest',
-      output:
-        'New Entries (2)\n' +
-        '+------------------------+--------+-------+-------+\n' +
-        '| Title                  | Author | Type  | Reads |\n' +
-        '+------------------------+--------+-------+-------+\n' +
-        '| Docker Multi-Stage     | alice  | guide | 8     |\n' +
-        '| React Testing Patterns | bob    | skill | 12    |\n' +
-        '+------------------------+--------+-------+-------+',
-      pauseAfter: 2500,
     },
     {
       command: 'brain trail kubernetes',
