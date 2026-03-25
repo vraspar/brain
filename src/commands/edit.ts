@@ -150,6 +150,14 @@ export const editCommand = new Command('edit')
       const db2 = createIndex(getDbPath());
       try {
         rebuildIndex(db2, entries);
+
+        // Clear source_content_hash since the entry was locally edited.
+        // This tells source-sync the entry diverged from its source.
+        try {
+          db2.prepare('UPDATE entries SET source_content_hash = NULL WHERE id = ?').run(entry.id);
+        } catch {
+          // Column may not exist in older schemas
+        }
       } finally {
         db2.close();
       }
