@@ -396,8 +396,8 @@ function registerUpdateEntry(server: McpServer, context: BrainMcpContext): void 
 
         // Clear source_content_hash if content was modified, so brain sources sync
         // won't overwrite agent edits (treats entry as "locally modified")
-        if (content !== undefined && 'source_content_hash' in updated) {
-          (updated as Record<string, unknown>)['source_content_hash'] = undefined;
+        if (content !== undefined && updated.source_content_hash) {
+          updated.source_content_hash = undefined;
         }
 
         // Write updated entry to disk

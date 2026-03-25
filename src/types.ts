@@ -13,6 +13,8 @@ export interface EntryFrontmatter {
   related_tools?: string[];
   summary?: string;
   source_repo?: string;
+  source_path?: string;
+  source_content_hash?: string;
   archived_at?: string; // ISO 8601
   archived_reason?: string;
 }
