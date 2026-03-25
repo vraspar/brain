@@ -12,14 +12,22 @@ import { parseInputContent, createEntry } from './entry.js';
 import { extractTags } from '../utils/tags.js';
 
 export function computeContentHash(content: string): string {
-  return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
+
+function validateCommitSha(sha: string): void {
+  if (!COMMIT_SHA_PATTERN.test(sha)) {
+    throw new Error(`Invalid commit SHA "${sha}". Expected 40-character hex string.`);
+  }
 }
 
 export interface SyncResult {
   added: string[];
   updated: string[];
   archived: string[];
-  conflicts: string[];
+  skippedLocalEdits: string[];
   unchanged: number;
 }
 
@@ -30,13 +38,15 @@ export async function syncSource(
   db: Database.Database,
   options: { dryRun?: boolean; force?: boolean },
 ): Promise<SyncResult> {
+  validateCommitSha(sourceConfig.lastCommit);
+
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), `brain-sync-${sourceName}-`));
   try {
     await cloneRepo(sourceConfig.url, tempDir, false);
     const headCommit = await getHeadCommit(tempDir);
 
     if (headCommit === sourceConfig.lastCommit) {
-      return { added: [], updated: [], archived: [], conflicts: [], unchanged: -1 };
+      return { added: [], updated: [], archived: [], skippedLocalEdits: [], unchanged: -1 };
     }
 
     const changes = await getChangedFilesSince(tempDir, sourceConfig.lastCommit, sourceConfig.path);
@@ -56,7 +66,7 @@ export async function syncSource(
       added: [],
       updated: [],
       archived: [],
-      conflicts: [],
+      skippedLocalEdits: [],
       unchanged: 0,
     };
 
@@ -121,7 +131,7 @@ export async function syncSource(
           const sourceHash = (row as EntryRow & { source_content_hash?: string })
             .source_content_hash;
           if (sourceHash && currentHash !== sourceHash && !options.force) {
-            result.conflicts.push(change.path);
+            result.skippedLocalEdits.push(change.path);
             break;
           }
 
