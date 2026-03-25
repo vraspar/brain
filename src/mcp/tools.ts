@@ -367,7 +367,7 @@ function registerUpdateEntry(server: McpServer, context: BrainMcpContext): void 
       type: z.enum(['guide', 'skill']).optional().describe('Change entry type'),
       summary: z.string().optional().describe('New summary'),
       content: z.string().optional().describe('Replace markdown content body'),
-      status: z.enum(['active', 'stale', 'archived']).optional().describe('Set entry status'),
+      status: z.enum(['active', 'stale', 'archived']).optional().describe('Set entry status — WARNING: setting "archived" effectively hides the entry from search, digest, and recommendations'),
     },
     async ({ id, title, tags, type, summary, content, status }) => {
       try {
@@ -409,7 +409,7 @@ function registerUpdateEntry(server: McpServer, context: BrainMcpContext): void 
           await commitAndPush(
             context.config.local,
             [filePath],
-            `Update ${updated.type}: ${updated.title}`,
+            `Update ${updated.type}: ${updated.title} (via MCP)`,
             { skipPush },
           );
         } catch {
