@@ -28,20 +28,21 @@ describe('loadSources', () => {
   });
 
   it('parses existing sources file', () => {
-    const yaml = `sources:
-  my-docs:
-    url: "https://github.com/org/docs.git"
-    path: "docs"
-    exclude:
-      - "**/drafts/**"
-      - "**/internal/**"
-    lastCommit: "abc123"
-    lastSync: "2024-01-01T00:00:00.000Z"
-    entryCount: 5
-    type: "guide"
-    sourceTag: true
-`;
-    fs.writeFileSync(path.join(tempDir, '.brain', 'sources.yaml'), yaml, 'utf-8');
+    const data = {
+      sources: {
+        'my-docs': {
+          url: 'https://github.com/org/docs.git',
+          path: 'docs',
+          exclude: ['**/drafts/**', '**/internal/**'],
+          lastCommit: 'abc123',
+          lastSync: '2024-01-01T00:00:00.000Z',
+          entryCount: 5,
+          type: 'guide',
+          sourceTag: true,
+        },
+      },
+    };
+    fs.writeFileSync(path.join(tempDir, '.brain', 'sources.json'), JSON.stringify(data, null, 2), 'utf-8');
     const registry = loadSources();
     expect(registry.sources['my-docs']).toBeDefined();
     expect(registry.sources['my-docs'].url).toBe('https://github.com/org/docs.git');
@@ -155,12 +156,13 @@ describe('removeSource', () => {
 });
 
 describe('computeContentHash', () => {
-  it('produces consistent results', () => {
+  it('produces consistent full 64-char hex results', () => {
     const content = 'Hello, world!';
     const hash1 = computeContentHash(content);
     const hash2 = computeContentHash(content);
     expect(hash1).toBe(hash2);
-    expect(hash1).toHaveLength(16);
+    expect(hash1).toHaveLength(64);
+    expect(hash1).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('detects changes', () => {

@@ -12,14 +12,14 @@ import { parseInputContent, createEntry } from './entry.js';
 import { extractTags } from '../utils/tags.js';
 
 export function computeContentHash(content: string): string {
-  return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
+  return crypto.createHash('sha256').update(content).digest('hex');
 }
 
 export interface SyncResult {
   added: string[];
   updated: string[];
   archived: string[];
-  conflicts: string[];
+  skippedLocalEdits: string[];
   unchanged: number;
 }
 
@@ -36,7 +36,7 @@ export async function syncSource(
     const headCommit = await getHeadCommit(tempDir);
 
     if (headCommit === sourceConfig.lastCommit) {
-      return { added: [], updated: [], archived: [], conflicts: [], unchanged: -1 };
+      return { added: [], updated: [], archived: [], skippedLocalEdits: [], unchanged: -1 };
     }
 
     const changes = await getChangedFilesSince(tempDir, sourceConfig.lastCommit, sourceConfig.path);
@@ -56,7 +56,7 @@ export async function syncSource(
       added: [],
       updated: [],
       archived: [],
-      conflicts: [],
+      skippedLocalEdits: [],
       unchanged: 0,
     };
 
@@ -121,7 +121,7 @@ export async function syncSource(
           const sourceHash = (row as EntryRow & { source_content_hash?: string })
             .source_content_hash;
           if (sourceHash && currentHash !== sourceHash && !options.force) {
-            result.conflicts.push(change.path);
+            result.skippedLocalEdits.push(change.path);
             break;
           }
 
