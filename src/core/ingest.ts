@@ -333,7 +333,7 @@ export async function runIngest(
   options: IngestOptions,
   brainRepoPath: string,
   db: Database.Database,
-): Promise<{ candidates: IngestCandidate[]; result?: IngestResult }> {
+): Promise<{ candidates: IngestCandidate[]; result?: IngestResult; headCommit?: string }> {
   let sourceDir: string;
   let tempDir: string | undefined;
   const progress = options.onProgress ?? (() => {});
@@ -360,6 +360,15 @@ export async function runIngest(
   }
 
   try {
+    // Get HEAD commit for source registration (before cleanup)
+    let headCommit: string | undefined;
+    try {
+      const { getHeadCommit } = await import('../utils/git.js');
+      headCommit = await getHeadCommit(sourceDir);
+    } catch {
+      // Not a git repo or no commits — headCommit stays undefined
+    }
+
     progress('Scanning for markdown files...');
     const candidates = await discoverCandidates(sourceDir, options);
     progress(`Found ${candidates.length} files`);
@@ -370,7 +379,7 @@ export async function runIngest(
 
     progress('Importing entries...');
     const result = await importCandidates(candidates, brainRepoPath, db, options);
-    return { candidates, result };
+    return { candidates, result, headCommit };
   } finally {
     if (tempDir) {
       progress('Cleaning up temp directory...');
