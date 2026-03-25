@@ -15,6 +15,14 @@ export function computeContentHash(content: string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
+
+function validateCommitSha(sha: string): void {
+  if (!COMMIT_SHA_PATTERN.test(sha)) {
+    throw new Error(`Invalid commit SHA "${sha}". Expected 40-character hex string.`);
+  }
+}
+
 export interface SyncResult {
   added: string[];
   updated: string[];
@@ -39,6 +47,7 @@ export async function syncSource(
       return { added: [], updated: [], archived: [], skippedLocalEdits: [], unchanged: -1 };
     }
 
+    validateCommitSha(sourceConfig.lastCommit);
     const changes = await getChangedFilesSince(tempDir, sourceConfig.lastCommit, sourceConfig.path);
     const mdChanges = changes.filter((c) => c.path.endsWith('.md'));
 
