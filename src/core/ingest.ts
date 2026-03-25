@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { cloneForIngest, cloneRepo, getBatchFileModifiedDates, validateUrl } from '../utils/git.js';
@@ -306,6 +307,8 @@ export async function importCandidates(
       filePath: `${dirName}/${slug}.md`,
       status,
       source_repo: repoName,
+      source_path: candidate.sourcePath,
+      source_content_hash: crypto.createHash('sha256').update(candidate.content).digest('hex'),
     };
 
     // Set dates from source if available
