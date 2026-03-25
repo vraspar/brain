@@ -273,11 +273,13 @@ function registerGetRecommendations(server: McpServer, context: BrainMcpContext)
         const keywords = extractTags(topic);
         const searchQuery = keywords.length > 0 ? keywords.join(' ') : topic;
 
-        // Strategy 1: FTS5 search on the topic
-        const searchResults = searchEntries(context.db, searchQuery, limit * 2);
+        // Strategy 1: FTS5 search on the topic (exclude archived entries)
+        const searchResults = searchEntries(context.db, searchQuery, limit * 2)
+          .filter((entry) => entry.status !== 'archived');
 
-        // Strategy 2: Tag overlap scoring for all entries
-        const allEntries = getAllEntries(context.db);
+        // Strategy 2: Tag overlap scoring for active entries only
+        const allEntries = getAllEntries(context.db)
+          .filter((entry) => entry.status !== 'archived');
         const topicTagSet = new Set(keywords.map((k) => k.toLowerCase()));
 
         const tagScored = allEntries

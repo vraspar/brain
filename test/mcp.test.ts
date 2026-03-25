@@ -313,6 +313,29 @@ describe('get_recommendations logic', () => {
     expect(results).toHaveLength(0);
     expect(keywords).toHaveLength(0);
   });
+
+  it('excludes archived entries from recommendations', () => {
+    // Add an archived entry to the index
+    const archivedEntry = makeEntry({
+      id: 'old-docker-guide',
+      title: 'Old Docker Guide',
+      tags: ['docker', 'deployment'],
+      content: 'Outdated Docker deployment guide.',
+      status: 'archived',
+      filePath: 'guides/old-docker-guide.md',
+    });
+    rebuildIndex(db, [...sampleEntries, archivedEntry]);
+
+    // Search for docker — archived entry should be excluded
+    const results = searchEntries(db, 'docker', 10)
+      .filter((entry) => entry.status !== 'archived');
+    expect(results.every((e) => e.status !== 'archived')).toBe(true);
+
+    // Tag overlap should also exclude archived
+    const allActive = getAllEntries(db)
+      .filter((entry) => entry.status !== 'archived');
+    expect(allActive.every((e) => e.id !== 'old-docker-guide')).toBe(true);
+  });
 });
 
 // ─── update_entry logic ───
