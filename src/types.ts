@@ -98,7 +98,7 @@ export interface SourceConfig {
   lastSync: string;
   entryCount: number;
   type?: EntryType;
-  sourceTag: boolean;
+  sourceTag: boolean | string;
 }
 
 export interface SourceRegistry {

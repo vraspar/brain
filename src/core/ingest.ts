@@ -23,7 +23,7 @@ export interface IngestOptions {
   excludePatterns?: string[];
   dryRun?: boolean;
   type?: EntryType;
-  sourceTag?: boolean;
+  sourceTag?: boolean | string;
   maxFiles?: number;
   overwrite?: boolean;
   author: string;
@@ -286,8 +286,11 @@ export async function importCandidates(
 
     // Build tags
     const tags = [...candidate.tags];
-    if (options.sourceTag && !tags.includes(repoName)) {
-      tags.push(repoName);
+    if (options.sourceTag) {
+      const tagValue = typeof options.sourceTag === 'string' ? options.sourceTag : repoName;
+      if (!tags.includes(tagValue)) {
+        tags.push(tagValue);
+      }
     }
 
     const entry: Entry = createEntry({
