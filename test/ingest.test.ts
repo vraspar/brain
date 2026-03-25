@@ -46,7 +46,7 @@ beforeEach(() => {
   saveConfig(config);
 
   // Create source repo with docs
-  fs.mkdirSync(path.join(sourceDir, 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(sourceDir, 'content'), { recursive: true });
   fs.mkdirSync(path.join(sourceDir, 'node_modules', 'pkg'), { recursive: true });
   fs.mkdirSync(path.join(sourceDir, '.github'), { recursive: true });
 });
@@ -66,7 +66,7 @@ function writeSourceDoc(relPath: string, content: string): void {
 
 describe('shouldIncludeFile', () => {
   it('includes regular doc files', () => {
-    expect(shouldIncludeFile('docs/setup.md')).toBe(true);
+    expect(shouldIncludeFile('content/setup.md')).toBe(true);
     expect(shouldIncludeFile('guides/deploy.md')).toBe(true);
   });
 
@@ -78,7 +78,7 @@ describe('shouldIncludeFile', () => {
   });
 
   it('includes nested README files as documentation', () => {
-    expect(shouldIncludeFile('docs/README.md')).toBe(true);
+    expect(shouldIncludeFile('content/README.md')).toBe(true);
     expect(shouldIncludeFile('guides/readme.md')).toBe(true);
     expect(shouldIncludeFile('api/v2/README.md')).toBe(true);
   });
@@ -104,17 +104,17 @@ describe('shouldIncludeFile', () => {
 
 describe('matchGlob', () => {
   it('matches single wildcard', () => {
-    expect(matchGlob('docs/setup.md', 'docs/*.md')).toBe(true);
-    expect(matchGlob('src/setup.md', 'docs/*.md')).toBe(false);
+    expect(matchGlob('content/setup.md', 'content/*.md')).toBe(true);
+    expect(matchGlob('src/setup.md', 'content/*.md')).toBe(false);
   });
 
   it('matches double wildcard (globstar)', () => {
-    expect(matchGlob('docs/guides/setup.md', 'docs/**/*.md')).toBe(true);
-    expect(matchGlob('docs/deep/nested/file.md', 'docs/**/*.md')).toBe(true);
+    expect(matchGlob('content/guides/setup.md', 'content/**/*.md')).toBe(true);
+    expect(matchGlob('content/deep/nested/file.md', 'content/**/*.md')).toBe(true);
   });
 
   it('rejects non-matching patterns', () => {
-    expect(matchGlob('src/code.ts', 'docs/**/*.md')).toBe(false);
+    expect(matchGlob('src/code.ts', 'content/**/*.md')).toBe(false);
   });
 });
 
@@ -157,7 +157,7 @@ describe('extractRepoName', () => {
   });
 
   it('handles trailing slashes', () => {
-    expect(extractRepoName('https://github.com/acme/docs/')).toBe('docs');
+    expect(extractRepoName('https://github.com/acme/content/')).toBe('content');
   });
 });
 
@@ -183,8 +183,8 @@ describe('isRemoteUrl', () => {
 
 describe('discoverCandidates', () => {
   it('discovers markdown files and skips meta files', async () => {
-    writeSourceDoc('docs/setup.md', '# Setup Guide\n\nHow to set up.');
-    writeSourceDoc('docs/deploy.md', '# Deploy Guide\n\nHow to deploy.');
+    writeSourceDoc('content/setup.md', '# Setup Guide\n\nHow to set up.');
+    writeSourceDoc('content/deploy.md', '# Deploy Guide\n\nHow to deploy.');
     writeSourceDoc('README.md', '# My Project');
     writeSourceDoc('CHANGELOG.md', '# Changelog');
     writeSourceDoc('node_modules/pkg/readme.md', '# pkg readme');
@@ -195,44 +195,44 @@ describe('discoverCandidates', () => {
     });
 
     const paths = candidates.map(c => c.sourcePath);
-    expect(paths).toContain('docs/setup.md');
-    expect(paths).toContain('docs/deploy.md');
+    expect(paths).toContain('content/setup.md');
+    expect(paths).toContain('content/deploy.md');
     expect(paths).not.toContain('README.md');
     expect(paths).not.toContain('CHANGELOG.md');
     expect(paths).not.toContain('node_modules/pkg/readme.md');
   });
 
   it('applies --path filter', async () => {
-    writeSourceDoc('docs/setup.md', '# Setup');
+    writeSourceDoc('content/setup.md', '# Setup');
     writeSourceDoc('guides/deploy.md', '# Deploy');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
-      pathFilter: 'docs/*.md',
+      pathFilter: 'content/*.md',
       author: 'testuser',
     });
 
     expect(candidates).toHaveLength(1);
-    expect(candidates[0].sourcePath).toBe('docs/setup.md');
+    expect(candidates[0].sourcePath).toBe('content/setup.md');
   });
 
   it('applies --exclude filter', async () => {
-    writeSourceDoc('docs/setup.md', '# Setup');
-    writeSourceDoc('docs/archive/old.md', '# Old');
+    writeSourceDoc('content/setup.md', '# Setup');
+    writeSourceDoc('content/archive/old.md', '# Old');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
-      excludePatterns: ['docs/archive/**'],
+      excludePatterns: ['content/archive/**'],
       author: 'testuser',
     });
 
     expect(candidates).toHaveLength(1);
-    expect(candidates[0].sourcePath).toBe('docs/setup.md');
+    expect(candidates[0].sourcePath).toBe('content/setup.md');
   });
 
   it('respects --max cap', async () => {
     for (let i = 0; i < 10; i++) {
-      writeSourceDoc(`docs/file${i}.md`, `# File ${i}\n\nContent ${i}.`);
+      writeSourceDoc(`content/file${i}.md`, `# File ${i}\n\nContent ${i}.`);
     }
 
     const candidates = await discoverCandidates(sourceDir, {
@@ -245,16 +245,16 @@ describe('discoverCandidates', () => {
   });
 
   it('skips empty files', async () => {
-    writeSourceDoc('docs/empty.md', '');
-    writeSourceDoc('docs/valid.md', '# Valid\n\nContent.');
+    writeSourceDoc('content/empty.md', '');
+    writeSourceDoc('content/valid.md', '# Valid\n\nContent.');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
       author: 'testuser',
     });
 
-    const empty = candidates.find(c => c.sourcePath === 'docs/empty.md');
-    const valid = candidates.find(c => c.sourcePath === 'docs/valid.md');
+    const empty = candidates.find(c => c.sourcePath === 'content/empty.md');
+    const valid = candidates.find(c => c.sourcePath === 'content/valid.md');
 
     expect(empty?.skip?.reason).toBe('empty file');
     expect(valid?.skip).toBeUndefined();
@@ -263,25 +263,25 @@ describe('discoverCandidates', () => {
   it('skips files larger than 1MB', async () => {
     // Create a file just over 1MB
     const largeContent = 'x'.repeat(1_048_577);
-    writeSourceDoc('docs/huge.md', largeContent);
-    writeSourceDoc('docs/small.md', '# Small\n\nContent.');
+    writeSourceDoc('content/huge.md', largeContent);
+    writeSourceDoc('content/small.md', '# Small\n\nContent.');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
       author: 'testuser',
     });
 
-    const huge = candidates.find(c => c.sourcePath === 'docs/huge.md');
-    const small = candidates.find(c => c.sourcePath === 'docs/small.md');
+    const huge = candidates.find(c => c.sourcePath === 'content/huge.md');
+    const small = candidates.find(c => c.sourcePath === 'content/small.md');
 
     expect(huge?.skip?.reason).toMatch(/file too large/);
     expect(small?.skip).toBeUndefined();
   });
 
   it('skips symbolic links', async () => {
-    writeSourceDoc('docs/real.md', '# Real\n\nContent.');
-    const linkPath = path.join(sourceDir, 'docs', 'link.md');
-    const targetPath = path.join(sourceDir, 'docs', 'real.md');
+    writeSourceDoc('content/real.md', '# Real\n\nContent.');
+    const linkPath = path.join(sourceDir, 'content', 'link.md');
+    const targetPath = path.join(sourceDir, 'content', 'real.md');
 
     try {
       fs.symlinkSync(targetPath, linkPath);
@@ -295,15 +295,15 @@ describe('discoverCandidates', () => {
       author: 'testuser',
     });
 
-    const link = candidates.find(c => c.sourcePath === 'docs/link.md');
-    const real = candidates.find(c => c.sourcePath === 'docs/real.md');
+    const link = candidates.find(c => c.sourcePath === 'content/link.md');
+    const real = candidates.find(c => c.sourcePath === 'content/real.md');
 
     expect(link?.skip?.reason).toBe('symbolic link');
     expect(real?.skip).toBeUndefined();
   });
 
   it('extracts title from frontmatter', async () => {
-    writeSourceDoc('docs/guide.md', '---\ntitle: My Guide\n---\n\nContent.');
+    writeSourceDoc('content/guide.md', '---\ntitle: My Guide\n---\n\nContent.');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
@@ -314,7 +314,7 @@ describe('discoverCandidates', () => {
   });
 
   it('extracts title from H1 heading', async () => {
-    writeSourceDoc('docs/setup.md', '# Setup Instructions\n\nHow to set up.');
+    writeSourceDoc('content/setup.md', '# Setup Instructions\n\nHow to set up.');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
@@ -325,7 +325,7 @@ describe('discoverCandidates', () => {
   });
 
   it('falls back to filename for title', async () => {
-    writeSourceDoc('docs/my-guide.md', 'Just some content without heading.');
+    writeSourceDoc('content/my-guide.md', 'Just some content without heading.');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
@@ -336,7 +336,7 @@ describe('discoverCandidates', () => {
   });
 
   it('auto-extracts tech tags from content', async () => {
-    writeSourceDoc('docs/setup.md', '# Setup\n\nUse docker and kubernetes for deployment.');
+    writeSourceDoc('content/setup.md', '# Setup\n\nUse docker and kubernetes for deployment.');
 
     const candidates = await discoverCandidates(sourceDir, {
       source: sourceDir,
@@ -356,7 +356,7 @@ describe('importCandidates', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/setup.md',
+          sourcePath: 'content/setup.md',
           title: 'Setup Guide',
           tags: ['docker'],
           content: 'How to set up with docker.',
@@ -399,7 +399,7 @@ describe('importCandidates', () => {
 
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/setup.md',
+          sourcePath: 'content/setup.md',
           title: 'Setup Guide',
           tags: ['docker'],
           content: 'New content from ingest.',
@@ -435,7 +435,7 @@ describe('importCandidates', () => {
 
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/setup.md',
+          sourcePath: 'content/setup.md',
           title: 'Setup Guide',
           tags: ['docker'],
           content: 'New updated content.',
@@ -460,7 +460,7 @@ describe('importCandidates', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/old.md',
+          sourcePath: 'content/old.md',
           title: 'Old Migration Guide',
           tags: [],
           content: 'Very old content.',
@@ -487,7 +487,7 @@ describe('importCandidates', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/guide.md',
+          sourcePath: 'content/guide.md',
           title: 'Docker Guide',
           tags: ['docker'],
           content: 'Docker content.',
@@ -515,7 +515,7 @@ describe('importCandidates', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/guide.md',
+          sourcePath: 'content/guide.md',
           title: 'My Guide',
           tags: [],
           content: 'Content.',
@@ -541,7 +541,7 @@ describe('importCandidates', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/empty.md',
+          sourcePath: 'content/empty.md',
           title: '',
           tags: [],
           content: '',
@@ -568,7 +568,7 @@ describe('importCandidates', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/snippet.md',
+          sourcePath: 'content/snippet.md',
           title: 'Docker Snippet',
           tags: [],
           content: 'Quick docker tip.',
@@ -656,7 +656,7 @@ describe('importCandidates slug collision', () => {
     try {
       const candidates: IngestCandidate[] = [
         {
-          sourcePath: 'docs/setup.md',
+          sourcePath: 'content/setup.md',
           title: 'Setup Guide',
           tags: [],
           content: 'First setup guide.',
