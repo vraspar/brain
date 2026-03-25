@@ -255,6 +255,44 @@ View read activity stats for a specific author.
 - **CI Pipeline Setup**: 12 reads, 5 unique readers
 ```
 
+### get_recommendations
+
+Get relevant entries for a topic using FTS5 search, tag overlap, and freshness scoring. Filters out archived entries.
+
+**Parameters:**
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `topic` | string | yes | — | Topic or keywords to get recommendations for |
+| `limit` | number | no | `5` | Maximum recommendations |
+
+**Example request:**
+
+```json
+{
+  "topic": "kubernetes deployment",
+  "limit": 3
+}
+```
+
+### update_entry
+
+Update an existing entry's fields. Commits changes automatically.
+
+**Parameters:**
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `id` | string | yes | — | Entry ID (slug) |
+| `title` | string | no | — | New title |
+| `tags` | string[] | no | — | Replace tags |
+| `type` | `"guide"` \| `"skill"` | no | — | Change type |
+| `summary` | string | no | — | Update summary |
+| `content` | string | no | — | Replace content body |
+| `status` | `"active"` \| `"stale"` \| `"archived"` | no | — | Set status |
+
+Only provided fields are updated. Updates the `updated` timestamp. Setting status to `"archived"` hides the entry from search, digest, and recommendations.
+
 ## Resources
 
 Resources provide ambient context that MCP clients can read without an explicit tool call. Both return `text/markdown` content.

@@ -23,6 +23,9 @@ brain push ./docs/*.md                       # batch import
 brain ingest https://github.com/team/repo    # import from another repo
 brain search "kubernetes"                    # full-text search
 brain digest                                 # what's new
+brain edit k8s-guide --add-tag helm          # update metadata
+brain open k8s-guide                         # open in $EDITOR
+brain status                                 # brain health dashboard
 brain trail kubernetes                       # follow connected entries
 brain prune --dry-run                        # find stale content
 ```
@@ -36,7 +39,7 @@ All commands support `--format json`. Run `brain <command> --help` for flags.
 - **Repo ingest** — import docs from external repos with freshness scoring
 - **Freshness** — entries scored Fresh/Aging/Stale; `brain prune` archives stale ones
 - **Knowledge trails** — auto-linked entries via tag overlap, title similarity, cross-references
-- **MCP server** — 5 tools + 2 resources, works with Claude, Copilot, Cursor, Windsurf
+- **MCP server** — 7 tools + 2 resources, works with Claude, Copilot, Cursor, Windsurf
 - **Read analytics** — per-entry read tracking across CLI and MCP
 - **Auto-detection** — title, type, and tags inferred from content on push
 
