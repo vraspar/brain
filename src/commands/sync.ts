@@ -14,6 +14,34 @@ export const syncCommand = new Command('sync')
     try {
       const config = loadConfig();
 
+      // Check for local-only brain (no remote configured)
+      if (!config.remote) {
+        // Rebuild index locally without pulling
+        const entries = await scanEntries(config.local);
+        const db = createIndex(getDbPath());
+        try {
+          rebuildIndex(db, entries);
+          const statsMap = buildUsageStatsMap(config.local, '30d');
+          updateFreshnessScores(db, statsMap);
+        } finally {
+          db.close();
+        }
+
+        if (format === 'json') {
+          console.log(JSON.stringify({
+            status: 'synced-local',
+            totalEntries: entries.length,
+            message: 'No remote configured. Index rebuilt locally.',
+          }, null, 2));
+        } else {
+          console.log(chalk.green('✅ Index rebuilt locally.'));
+          console.log(chalk.dim(`   Total entries indexed: ${entries.length}`));
+          console.log('');
+          console.log(chalk.yellow('   ⚠ No remote configured. Add one with: brain remote add <url>'));
+        }
+        return;
+      }
+
       // Sync repo
       const result = await syncBrain(config);
 
