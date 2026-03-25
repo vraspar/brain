@@ -6,20 +6,27 @@
 
   var DEMO_SEQUENCE = [
     {
-      command: 'brain search "docker deployment"',
+      command: 'brain search "kubernetes"',
       output:
         'Found 3 results:\n' +
-        '+------------------------+--------+-------+---------------+\n' +
-        '| Title                  | Author | Type  | Tags          |\n' +
-        '+------------------------+--------+-------+---------------+\n' +
-        '| Docker Multi-Stage     | alice  | guide | docker        |\n' +
-        '| K8s Deployment Guide   | bob    | guide | k8s, docker   |\n' +
-        '| CI Pipeline Setup      | carol  | guide | ci, github    |\n' +
-        '+------------------------+--------+-------+---------------+',
+        '+------------------------+--------+-------+-----------+\n' +
+        '| Title                  | Author | Type  | Tags      |\n' +
+        '+------------------------+--------+-------+-----------+\n' +
+        '| K8s Deployment Guide   | bob    | guide | k8s       |\n' +
+        '| CI Pipeline            | carol  | guide | ci, k8s   |\n' +
+        '| Helm Chart Patterns    | alice  | skill | helm, k8s |\n' +
+        '+------------------------+--------+-------+-----------+',
       pauseAfter: 2500,
     },
     {
-      command: 'brain digest --since 7d',
+      command: 'brain push ./guide.md',
+      output:
+        '✅ Pushed: Docker Multi-Stage Builds\n' +
+        '   Tags: docker (auto-detected)',
+      pauseAfter: 2000,
+    },
+    {
+      command: 'brain digest',
       output:
         'New Entries (2)\n' +
         '+------------------------+--------+-------+-------+\n' +
@@ -27,20 +34,16 @@
         '+------------------------+--------+-------+-------+\n' +
         '| Docker Multi-Stage     | alice  | guide | 8     |\n' +
         '| React Testing Patterns | bob    | skill | 12    |\n' +
-        '+------------------------+--------+-------+-------+\n' +
-        '\n' +
-        'Top: React Testing Patterns (12 reads, 4 unique)',
+        '+------------------------+--------+-------+-------+',
       pauseAfter: 2500,
     },
     {
-      command: 'brain push --title "Helm Chart Patterns" --type guide --file ./helm.md',
+      command: 'brain trail kubernetes',
       output:
-        '✅ Pushed: Helm Chart Patterns\n' +
-        '   ID: helm-chart-patterns\n' +
-        '   Type: guide\n' +
-        '   File: guides/helm-chart-patterns.md\n' +
-        '   Tags: kubernetes, helm (auto-detected)',
-      pauseAfter: 3000,
+        'K8s Deployment Guide\n' +
+        '  → Helm Chart Patterns (tags: k8s)\n' +
+        '  → CI Pipeline (tags: k8s, ci)',
+      pauseAfter: 2500,
     },
   ];
 
