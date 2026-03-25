@@ -121,19 +121,24 @@ export async function commitAndPush(
   }
 
   const git = createGit(repoPath);
+
   try {
     await git.add(files);
     await git.commit(commitMessage);
-
-    if (!options?.skipPush) {
-      await git.push();
-      return { pushed: true };
-    }
-    return { pushed: false };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to commit and push in "${repoPath}": ${message}`);
+    throw new Error(`Failed to commit in "${repoPath}": ${message}`);
   }
+
+  if (!options?.skipPush) {
+    try {
+      await git.push();
+      return { pushed: true };
+    } catch {
+      return { pushed: false };
+    }
+  }
+  return { pushed: false };
 }
 
 export async function getLastCommitDate(repoPath: string): Promise<Date> {
