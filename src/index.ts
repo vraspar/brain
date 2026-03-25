@@ -16,6 +16,7 @@ import { trailCommand } from './commands/trail.js';
 import { pruneCommand } from './commands/prune.js';
 import { ingestCommand } from './commands/ingest.js';
 import { restoreCommand } from './commands/restore.js';
+import { sourcesCommand } from './commands/sources.js';
 import { remoteCommand } from './commands/remote.js';
 import { openCommand } from './commands/open.js';
 
@@ -43,6 +44,7 @@ program.addCommand(trailCommand);
 program.addCommand(pruneCommand);
 program.addCommand(ingestCommand);
 program.addCommand(restoreCommand);
+program.addCommand(sourcesCommand);
 program.addCommand(remoteCommand);
 program.addCommand(openCommand);
 

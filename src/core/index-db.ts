@@ -77,8 +77,14 @@ export function createIndex(dbPath: string): Database.Database {
   if (!existingColumns.has('source_repo')) {
     db.exec('ALTER TABLE entries ADD COLUMN source_repo TEXT');
   }
+  if (!existingColumns.has('source_path')) {
+    db.exec('ALTER TABLE entries ADD COLUMN source_path TEXT');
+  }
+  if (!existingColumns.has('source_content_hash')) {
+    db.exec('ALTER TABLE entries ADD COLUMN source_content_hash TEXT');
+  }
 
-  // Entry links table for auto-linking (added in v0.2)
+  // Entry links tablefor auto-linking (added in v0.2)
   db.exec(`
     CREATE TABLE IF NOT EXISTS entry_links (
       source_id TEXT NOT NULL,
@@ -305,6 +311,8 @@ export interface EntryRow {
   freshness_label?: string | null;
   read_count_30d?: number | null;
   source_repo?: string | null;
+  source_path?: string | null;
+  source_content_hash?: string | null;
 }
 
 /**
@@ -373,4 +381,16 @@ export function rowToEntry(row: EntryRow): Entry {
     content: row.content,
     filePath: row.file_path,
   };
+}
+
+/**
+ * Find an entry by its source repo and source path.
+ */
+export function findEntryBySourcePath(
+  db: Database.Database,
+  sourceRepo: string,
+  sourcePath: string,
+): EntryRow | undefined {
+  const stmt = db.prepare('SELECT * FROM entries WHERE source_repo = ? AND source_path = ?');
+  return stmt.get(sourceRepo, sourcePath) as EntryRow | undefined;
 }

@@ -87,3 +87,18 @@ export interface FreshnessScore {
 }
 
 export type FreshnessLabel = FreshnessScore['label'];
+
+export interface SourceConfig {
+  url: string;
+  path?: string;
+  exclude?: string[];
+  lastCommit: string;
+  lastSync: string;
+  entryCount: number;
+  type?: EntryType;
+  sourceTag: boolean;
+}
+
+export interface SourceRegistry {
+  sources: Record<string, SourceConfig>;
+}
