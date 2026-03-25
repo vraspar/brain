@@ -5,6 +5,7 @@ import { runIngest, extractRepoName } from '../core/ingest.js';
 import { scanEntries } from '../core/entry.js';
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 import { commitAndPush } from '../utils/git.js';
+import { upsertSource } from '../core/sources.js';
 import type { EntryType, IngestCandidate } from '../types.js';
 
 function freshnessIcon(freshness: string): string {
@@ -78,7 +79,7 @@ export const ingestCommand = new Command('ingest')
           ? (msg: string) => console.log(chalk.dim(`   ${msg}`))
           : undefined;
 
-        const { candidates, result } = await runIngest({
+        const { candidates, result, headCommit } = await runIngest({
           source,
           pathFilter: options.path,
           excludePatterns: options.exclude,
@@ -144,6 +145,20 @@ export const ingestCommand = new Command('ingest')
           // Local-only: rebuild index
           const entries = await scanEntries(config.local);
           rebuildIndex(db, entries);
+        }
+
+        // Register source for future sync
+        if (result.imported.length > 0 && headCommit) {
+          upsertSource(repoName, {
+            url: source,
+            path: options.path,
+            exclude: options.exclude,
+            lastCommit: headCommit,
+            lastSync: new Date().toISOString(),
+            entryCount: result.imported.length,
+            type: options.type as EntryType | undefined,
+            sourceTag: options.sourceTag ?? false,
+          });
         }
 
         if (format === 'json') {
