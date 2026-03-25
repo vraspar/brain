@@ -40,6 +40,7 @@ export const ingestCommand = new Command('ingest')
   .option('--source-tag', 'Auto-tag with source repo name')
   .option('--max <n>', 'Maximum files to import', '100')
   .option('--overwrite', 'Overwrite existing entries with same slug')
+  .option('--shallow', 'Use shallow clone (fastest, but no freshness dating)')
   .action(async (source: string, options: {
     path?: string;
     exclude?: string[];
@@ -48,6 +49,7 @@ export const ingestCommand = new Command('ingest')
     sourceTag?: boolean;
     max: string;
     overwrite?: boolean;
+    shallow?: boolean;
   }) => {
     const format = ingestCommand.parent?.opts().format ?? 'text';
 
@@ -85,6 +87,7 @@ export const ingestCommand = new Command('ingest')
           sourceTag: options.sourceTag,
           maxFiles,
           overwrite: options.overwrite,
+          shallow: options.shallow,
           author: config.author,
           onProgress,
         }, config.local, db);

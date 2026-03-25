@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { cloneRepo, getFileLastModified, validateUrl } from '../utils/git.js';
+import { cloneForIngest, cloneRepo, getBatchFileModifiedDates, validateUrl } from '../utils/git.js';
 import { extractTags } from '../utils/tags.js';
 import {
   createEntry,
@@ -26,6 +26,7 @@ export interface IngestOptions {
   maxFiles?: number;
   overwrite?: boolean;
   author: string;
+  shallow?: boolean;
   onProgress?: (message: string) => void;
 }
 
@@ -160,6 +161,9 @@ export async function discoverCandidates(
   const maxFiles = options.maxFiles ?? 100;
   const cappedFiles = files.slice(0, maxFiles);
 
+  // Batch fetch file dates in a single git log call (instead of per-file)
+  const fileDates = await getBatchFileModifiedDates(sourceDir, cappedFiles);
+
   const MAX_FILE_SIZE = 1_048_576; // 1MB
 
   const candidates: IngestCandidate[] = [];
@@ -214,8 +218,9 @@ export async function discoverCandidates(
     const tags = parsed.tags ?? extractTags(raw);
     const content = parsed.content;
 
-    // Get file last modified from git history
-    const sourceUpdated = await getFileLastModified(sourceDir, filePath);
+    // Use batch-fetched date (single git log call for all files)
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    const sourceUpdated = fileDates.get(normalizedPath);
     const freshness = computeImportFreshness(sourceUpdated);
 
     candidates.push({
@@ -338,9 +343,13 @@ export async function runIngest(
   // Resolve source
   if (isRemoteUrl(options.source)) {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'brain-ingest-'));
-    progress('Cloning repository...');
-    // Full clone (not shallow) for accurate git log dates
-    await cloneRepo(options.source, tempDir, false);
+    if (options.shallow) {
+      progress('Cloning repository (shallow)...');
+      await cloneRepo(options.source, tempDir, true);
+    } else {
+      progress('Cloning repository (partial)...');
+      await cloneForIngest(options.source, tempDir);
+    }
     sourceDir = tempDir;
   } else {
     sourceDir = path.resolve(options.source);

@@ -164,6 +164,62 @@ export async function getFileLastModified(repoPath: string, filePath: string): P
   }
 }
 
+/**
+ * Clone a repo using partial clone (treeless) for ingest.
+ * Downloads tree metadata but fetches file content on demand.
+ * Much faster than full clone for large repos (~50MB vs 2GB).
+ */
+export async function cloneForIngest(url: string, targetPath: string): Promise<void> {
+  validateUrl(url);
+  try {
+    await simpleGit().clone(url, targetPath, ['--filter=blob:none']);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to clone repository "${url}": ${message}`);
+  }
+}
+
+/**
+ * Get last modified dates for multiple files in a single git log call.
+ * Returns a Map from relative file path to last modified date.
+ * Each file maps to the date of its most recent commit.
+ */
+export async function getBatchFileModifiedDates(
+  repoPath: string,
+  filePaths: string[],
+): Promise<Map<string, Date>> {
+  const git = createGit(repoPath);
+  const result = new Map<string, Date>();
+
+  if (filePaths.length === 0) return result;
+
+  try {
+    const log = await git.raw([
+      'log', '--format=%H %aI', '--name-only', '--diff-filter=ACMR', 'HEAD',
+    ]);
+
+    const targetSet = new Set(filePaths.map(f => f.replace(/\\/g, '/')));
+    let currentDate: string | null = null;
+
+    for (const line of log.split('\n')) {
+      const commitMatch = line.match(/^[0-9a-f]{40}\s+(.+)$/);
+      if (commitMatch) {
+        currentDate = commitMatch[1];
+        continue;
+      }
+
+      const trimmed = line.trim();
+      if (trimmed && currentDate && targetSet.has(trimmed) && !result.has(trimmed)) {
+        result.set(trimmed, new Date(currentDate));
+      }
+    }
+  } catch {
+    // Git log failed — return empty map, freshness defaults to 'aging'
+  }
+
+  return result;
+}
+
 export async function getCurrentUser(repoPath: string): Promise<string> {
   const git = createGit(repoPath);
   try {
