@@ -20,7 +20,7 @@ interface EditOptions {
 export const editCommand = new Command('edit')
   .description('Edit an entry\'s metadata')
   .argument('<entry-id>', 'Entry ID (slug) to edit')
-  .option('--title <title>', 'Set new title')
+  .option('--title <title>', 'Set new title (note: entry ID and filename are unchanged)')
   .option('--tags <tags>', 'Replace all tags (comma-separated)')
   .option('--type <type>', 'Change type: guide or skill')
   .option('--add-tag <tag...>', 'Add tag(s) without removing existing')
@@ -69,6 +69,8 @@ export const editCommand = new Command('edit')
       const changes: string[] = [];
 
       if (options.title) {
+        // Title changes update frontmatter only — the entry ID (slug) and
+        // filename remain unchanged to preserve existing links and receipts.
         current.title = options.title;
         changes.push(`title → "${options.title}"`);
       }
