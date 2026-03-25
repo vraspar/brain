@@ -39,6 +39,7 @@ const META_FILES = new Set([
 const EXCLUDED_DIRS = new Set([
   'node_modules', '.git', '.github', '.vscode', 'dist', 'build',
   'coverage', '__pycache__', '.tox', 'vendor', 'target',
+  'docs', '_archive',
 ]);
 
 /**
