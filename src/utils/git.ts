@@ -181,6 +181,36 @@ export async function getCurrentUser(repoPath: string): Promise<string> {
   }
 }
 
+export async function getHeadCommit(repoPath: string): Promise<string> {
+  const git = createGit(repoPath);
+  const log = await git.log({ maxCount: 1 });
+  if (!log.latest) throw new Error('No commits in repository');
+  return log.latest.hash;
+}
+
+export async function getChangedFilesSince(
+  repoPath: string,
+  sinceCommit: string,
+  pathFilter?: string,
+): Promise<Array<{ status: 'A' | 'M' | 'D' | 'R'; path: string; oldPath?: string }>> {
+  const git = createGit(repoPath);
+  const args = ['--name-status', sinceCommit, 'HEAD'];
+  if (pathFilter) args.push('--', pathFilter);
+  const diff = await git.diff(args);
+  const changes: Array<{ status: 'A' | 'M' | 'D' | 'R'; path: string; oldPath?: string }> = [];
+  for (const line of diff.split('\n')) {
+    if (!line.trim()) continue;
+    const parts = line.split('\t');
+    const statusChar = parts[0].charAt(0) as 'A' | 'M' | 'D' | 'R';
+    if (statusChar === 'R') {
+      changes.push({ status: 'R', path: parts[2], oldPath: parts[1] });
+    } else {
+      changes.push({ status: statusChar, path: parts[1] });
+    }
+  }
+  return changes;
+}
+
 export async function getRemoteUrl(repoPath: string): Promise<string> {
   const git = createGit(repoPath);
   try {
