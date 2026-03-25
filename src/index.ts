@@ -19,6 +19,8 @@ import { restoreCommand } from './commands/restore.js';
 import { sourcesCommand } from './commands/sources.js';
 import { remoteCommand } from './commands/remote.js';
 import { openCommand } from './commands/open.js';
+import { editCommand } from './commands/edit.js';
+import { statusCommand } from './commands/status.js';
 
 const program = new Command();
 
@@ -47,5 +49,7 @@ program.addCommand(restoreCommand);
 program.addCommand(sourcesCommand);
 program.addCommand(remoteCommand);
 program.addCommand(openCommand);
+program.addCommand(editCommand);
+program.addCommand(statusCommand);
 
 program.parse();
