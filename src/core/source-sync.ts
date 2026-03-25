@@ -38,6 +38,8 @@ export async function syncSource(
   db: Database.Database,
   options: { dryRun?: boolean; force?: boolean },
 ): Promise<SyncResult> {
+  validateCommitSha(sourceConfig.lastCommit);
+
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), `brain-sync-${sourceName}-`));
   try {
     await cloneRepo(sourceConfig.url, tempDir, false);
@@ -47,7 +49,6 @@ export async function syncSource(
       return { added: [], updated: [], archived: [], skippedLocalEdits: [], unchanged: -1 };
     }
 
-    validateCommitSha(sourceConfig.lastCommit);
     const changes = await getChangedFilesSince(tempDir, sourceConfig.lastCommit, sourceConfig.path);
     const mdChanges = changes.filter((c) => c.path.endsWith('.md'));
 

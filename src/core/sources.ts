@@ -24,7 +24,7 @@ export function saveSources(registry: SourceRegistry): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(sourcesPath, JSON.stringify(registry, null, 2), 'utf-8');
+  fs.writeFileSync(sourcesPath, JSON.stringify(registry, null, 2) + '\n', 'utf-8');
 }
 
 export function getSource(name: string): SourceConfig | undefined {

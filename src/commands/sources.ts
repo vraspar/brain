@@ -74,7 +74,7 @@ sourcesCommand
                 console.log(chalk.red(`  - ${result.archived.length} archived`));
               }
               if (result.skippedLocalEdits.length) {
-                console.log(chalk.yellow(`  ⚠ ${result.skippedLocalEdits.length} suggestions (local edits preserved)`));
+                console.log(chalk.yellow(`  ⚠ ${result.skippedLocalEdits.length} skipped (local edits preserved)`));
                 for (const c of result.skippedLocalEdits) {
                   console.log(chalk.yellow(`    ${c}`));
                 }
