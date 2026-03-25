@@ -212,6 +212,29 @@ Follow a topic across related entries:
 brain trail kubernetes
 ```
 
+## Edit entries
+
+Update metadata without opening the file:
+
+```bash
+brain edit k8s-guide --add-tag helm
+brain edit k8s-guide --title "K8s Deployment Runbook"
+```
+
+Or open the file directly in your editor:
+
+```bash
+brain open k8s-guide
+```
+
+## Check brain health
+
+See entry counts, freshness distribution, and sync state:
+
+```bash
+brain status
+```
+
 ## Next steps
 
 - [Full CLI reference](commands.md) — all commands, flags, and edge cases

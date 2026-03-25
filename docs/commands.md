@@ -422,6 +422,91 @@ brain retract old-deployment-guide --format json
 
 ---
 
+## brain edit
+
+Edit an entry's metadata without opening the file. Updates frontmatter fields, commits, and pushes.
+
+```
+brain edit <entry-id> [--title <title>] [--tags <csv>] [--type <type>] [--add-tag <tag>...] [--remove-tag <tag>...] [--summary <text>]
+```
+
+| Argument/Flag | Required | Description |
+|---------------|----------|-------------|
+| `<entry-id>` | Yes | Entry ID (slug) to edit. |
+| `--title <title>` | No | Set a new title. |
+| `--tags <csv>` | No | Replace all tags (comma-separated). |
+| `--type <type>` | No | Change type: `guide` or `skill`. Moves the file between directories. |
+| `--add-tag <tag>` | No | Add tag(s) without removing existing. Repeatable. |
+| `--remove-tag <tag>` | No | Remove specific tag(s). Repeatable. |
+| `--summary <text>` | No | Set or update the summary. |
+
+At least one edit flag is required. Updates the `updated` timestamp automatically.
+
+### Examples
+
+```bash
+brain edit k8s-guide --add-tag helm --add-tag argocd
+brain edit k8s-guide --title "K8s Deployment Runbook"
+brain edit k8s-guide --type skill               # moves from guides/ to skills/
+brain edit k8s-guide --remove-tag outdated
+brain edit k8s-guide --tags "k8s,helm,deploy"    # replace all tags
+```
+
+---
+
+## brain status
+
+Show a health dashboard for the brain.
+
+```
+brain status
+```
+
+No flags. Displays: hub name, local/remote paths, author, entry counts by type, freshness distribution (Fresh/Aging/Stale), archived entry count, ingested source repos, storage sizes, last sync/digest timestamps.
+
+---
+
+## brain open
+
+Open an entry file in your editor for direct content editing.
+
+```
+brain open <entry-id>
+```
+
+Uses `$EDITOR`, `$VISUAL`, or platform default (`open` on macOS, `xdg-open` on Linux). After editing, run `brain sync` to commit changes.
+
+---
+
+## brain remote add
+
+Add a git remote to a local-only brain.
+
+```
+brain remote add <url>
+```
+
+Sets the origin remote and attempts an initial push. Fails if a remote is already configured.
+
+---
+
+## brain sources
+
+Manage external source repositories for incremental sync.
+
+```
+brain sources                        # list registered sources
+brain sources list                   # same as above
+brain sources sync [name]            # sync from all or one source
+brain sources sync --dry-run         # preview changes
+brain sources sync --force           # overwrite local changes on conflict
+brain sources remove <name>          # unregister a source
+```
+
+Sources are registered automatically by `brain ingest` and tracked in `~/.brain/sources.json`. Sync uses `git fetch` against persistent bare mirrors for fast incremental updates.
+
+---
+
 ## brain ingest
 
 Import documentation from a git repository or local directory. Solves the cold-start problem by batch-importing existing docs.

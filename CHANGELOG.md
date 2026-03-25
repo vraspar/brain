@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-25
+
+### Added
+
+- `brain edit <entry-id>` command for metadata editing (title, tags, type, summary) without opening the file
+- `brain edit` supports `--add-tag` and `--remove-tag` for incremental tag changes
+- `brain edit` handles type changes by moving files between `guides/` and `skills/`
+- `brain status` command showing health dashboard: entry counts, freshness distribution, storage sizes, sync state
+- `brain open <entry-id>` command to open entry files in `$EDITOR` / `$VISUAL` (uses `execFileSync`, no shell injection)
+- `brain remote add <url>` command to add a remote to local-only brains
+- `brain sources` command group for managing external source repositories (`list`, `sync`, `remove`)
+- Incremental source sync via persistent bare mirrors and `git fetch`
+- `get_recommendations` MCP tool for topic-based entry suggestions using FTS5 + tag overlap + freshness
+- `update_entry` MCP tool for partial field updates (title, tags, type, summary, content, status)
+- Source registry at `~/.brain/sources.json` for tracking ingested repos
+
 ## [0.3.0] - 2026-03-24
 
 ### Added
