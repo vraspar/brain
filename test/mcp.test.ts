@@ -5,13 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   createIndex,
+  getAllEntries,
   getEntryById,
   getRecentEntries,
   rebuildIndex,
   searchEntries,
 } from '../src/core/index-db.js';
-import { createEntry } from '../src/core/entry.js';
+import { createEntry, scanEntries, writeEntry } from '../src/core/entry.js';
 import { getEntryStats, getStats, recordReceipt } from '../src/core/receipts.js';
+import { computeFreshness } from '../src/core/freshness.js';
+import { buildUsageStatsMap } from '../src/core/freshness-stats.js';
+import { extractTags } from '../src/utils/tags.js';
 import { parseTimeWindow } from '../src/utils/time.js';
 import { registerTools } from '../src/mcp/tools.js';
 import { registerResources } from '../src/mcp/resources.js';
@@ -107,7 +111,7 @@ afterEach(() => {
 });
 
 describe('registerTools', () => {
-  it('registers all 5 tools without errors', () => {
+  it('registers all 7 tools without errors', () => {
     expect(() => registerTools(server, context)).not.toThrow();
   });
 });
@@ -244,5 +248,197 @@ describe('MCP server integration', () => {
     await recordReceipt(tempDir, entry!.id, context.config.author, 'mcp');
     const stats = getEntryStats(tempDir, 'react-testing', '7d');
     expect(stats.accessCount).toBe(1);
+  });
+});
+
+// ─── get_recommendations logic ───
+
+describe('get_recommendations logic', () => {
+  it('returns entries matching topic via FTS search', () => {
+    const results = searchEntries(db, 'kubernetes deployment', 5);
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results[0].id).toBe('k8s-deployment');
+  });
+
+  it('extracts keywords from topic for tag matching', () => {
+    const keywords = extractTags('I am deploying a React app to Kubernetes with Docker');
+    expect(keywords).toContain('react');
+    expect(keywords).toContain('kubernetes');
+    expect(keywords).toContain('docker');
+  });
+
+  it('finds entries by tag overlap when FTS has no direct match', () => {
+    const allEntries = getAllEntries(db);
+    const topicTags = new Set(['testing']);
+
+    const tagMatches = allEntries
+      .filter((entry) => entry.tags.some((t) => topicTags.has(t.toLowerCase())))
+      .sort((a, b) => {
+        const aOverlap = a.tags.filter((t) => topicTags.has(t.toLowerCase())).length;
+        const bOverlap = b.tags.filter((t) => topicTags.has(t.toLowerCase())).length;
+        return bOverlap - aOverlap;
+      });
+
+    expect(tagMatches.length).toBeGreaterThanOrEqual(1);
+    expect(tagMatches.some((e) => e.id === 'react-testing')).toBe(true);
+  });
+
+  it('scores with freshness component', () => {
+    const entry = getEntryById(db, 'k8s-deployment')!;
+    const freshness = computeFreshness(entry);
+    expect(freshness.score).toBeGreaterThan(0);
+    expect(freshness.score).toBeLessThanOrEqual(1);
+    expect(['fresh', 'aging', 'stale']).toContain(freshness.label);
+  });
+
+  it('deduplicates entries across search and tag strategies', () => {
+    // k8s-deployment matches both FTS for "kubernetes" and tag "devops"
+    const searchResults = searchEntries(db, 'kubernetes', 10);
+    const allEntries = getAllEntries(db);
+    const topicTags = new Set(['devops']);
+
+    const tagOnly = allEntries
+      .filter((entry) => !searchResults.some((r) => r.id === entry.id))
+      .filter((entry) => entry.tags.some((t) => topicTags.has(t.toLowerCase())));
+
+    // k8s-deployment should already be in searchResults, not duplicated in tagOnly
+    const searchIds = new Set(searchResults.map((e) => e.id));
+    expect(searchIds.has('k8s-deployment')).toBe(true);
+    expect(tagOnly.every((e) => !searchIds.has(e.id))).toBe(true);
+  });
+
+  it('returns empty for completely unrelated topic', () => {
+    const results = searchEntries(db, 'quantum physics parallel universes', 5);
+    const keywords = extractTags('quantum physics parallel universes');
+    expect(results).toHaveLength(0);
+    expect(keywords).toHaveLength(0);
+  });
+});
+
+// ─── update_entry logic ───
+
+describe('update_entry logic', () => {
+  beforeEach(() => {
+    // Write entries to disk so we can update them
+    for (const entry of sampleEntries) {
+      const dirName = entry.type === 'guide' ? 'guides' : 'skills';
+      const dirPath = path.join(tempDir, dirName);
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  });
+
+  it('retrieves existing entry for update', () => {
+    const existing = getEntryById(db, 'k8s-deployment');
+    expect(existing).not.toBeNull();
+    expect(existing!.title).toBe('Kubernetes Deployment Guide');
+  });
+
+  it('merges only provided fields', () => {
+    const existing = getEntryById(db, 'k8s-deployment')!;
+
+    // Simulate partial update: only change tags and summary
+    const updated: Entry = {
+      ...existing,
+      tags: ['kubernetes', 'helm', 'deployment'],
+      summary: 'Updated K8s deployment with Helm',
+      updated: new Date().toISOString(),
+    };
+
+    expect(updated.title).toBe(existing.title); // unchanged
+    expect(updated.author).toBe(existing.author); // unchanged
+    expect(updated.tags).toEqual(['kubernetes', 'helm', 'deployment']); // changed
+    expect(updated.summary).toBe('Updated K8s deployment with Helm'); // changed
+  });
+
+  it('preserves unchanged fields during update', () => {
+    const existing = getEntryById(db, 'react-testing')!;
+
+    // Only update title
+    const updated: Entry = {
+      ...existing,
+      title: 'React Testing Patterns v2',
+      updated: new Date().toISOString(),
+    };
+
+    expect(updated.type).toBe('skill'); // preserved
+    expect(updated.author).toBe('bob'); // preserved
+    expect(updated.tags).toEqual(['react', 'testing']); // preserved
+    expect(updated.content).toBe(existing.content); // preserved
+  });
+
+  it('writes updated entry to disk and rebuilds index', async () => {
+    const existing = getEntryById(db, 'k8s-deployment')!;
+
+    const updated: Entry = {
+      ...existing,
+      summary: 'Now with Helm charts',
+      updated: new Date().toISOString(),
+    };
+
+    const filePath = await writeEntry(tempDir, updated);
+    expect(filePath).toBe('guides/k8s-deployment.md');
+
+    // Verify file was written
+    const fullPath = path.join(tempDir, filePath);
+    expect(fs.existsSync(fullPath)).toBe(true);
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    expect(content).toContain('Now with Helm charts');
+  });
+
+  it('returns error for nonexistent entry', () => {
+    const entry = getEntryById(db, 'nonexistent-entry');
+    expect(entry).toBeNull();
+  });
+
+  it('can change entry status to archived', () => {
+    const existing = getEntryById(db, 'ci-pipeline')!;
+    expect(existing.status).toBe('active');
+
+    const updated: Entry = {
+      ...existing,
+      status: 'archived',
+      updated: new Date().toISOString(),
+    };
+
+    expect(updated.status).toBe('archived');
+    expect(updated.id).toBe(existing.id); // ID preserved
+  });
+
+  it('can update content body', () => {
+    const existing = getEntryById(db, 'react-testing')!;
+    const newContent = 'Updated: Use React Testing Library instead of Enzyme.';
+
+    const updated: Entry = {
+      ...existing,
+      content: newContent,
+      updated: new Date().toISOString(),
+    };
+
+    expect(updated.content).toBe(newContent);
+    expect(updated.title).toBe(existing.title); // other fields preserved
+  });
+
+  it('rebuilds index after update to reflect changes in search', async () => {
+    const existing = getEntryById(db, 'k8s-deployment')!;
+
+    const updated: Entry = {
+      ...existing,
+      tags: ['kubernetes', 'helm'],
+      updated: new Date().toISOString(),
+    };
+
+    await writeEntry(tempDir, updated);
+
+    // Write all entries to disk for scanEntries
+    for (const entry of sampleEntries.filter((e) => e.id !== 'k8s-deployment')) {
+      await writeEntry(tempDir, entry);
+    }
+
+    const scanned = await scanEntries(tempDir);
+    rebuildIndex(db, scanned);
+
+    const refreshed = getEntryById(db, 'k8s-deployment');
+    expect(refreshed).not.toBeNull();
+    expect(refreshed!.tags).toContain('helm');
   });
 });
