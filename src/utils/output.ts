@@ -152,10 +152,10 @@ export function formatSearchResults(
   const showFreshness = options.freshness && options.freshness.size > 0;
 
   const head = showPreview
-    ? ['Title', 'Author', 'Type', 'Tags', 'Preview']
+    ? ['ID', 'Title', 'Author', 'Type', 'Tags', 'Preview']
     : showFreshness
-      ? ['Title', 'Author', 'Type', 'Freshness', 'Tags']
-      : ['Title', 'Author', 'Type', 'Tags', 'Status'];
+      ? ['ID', 'Title', 'Author', 'Type', 'Freshness', 'Tags']
+      : ['ID', 'Title', 'Author', 'Type', 'Tags', 'Status'];
 
   const table = new Table({
     head,
@@ -175,6 +175,7 @@ export function formatSearchResults(
       const snippet = options.snippets!.get(entry.id) ?? '';
       const cleanSnippet = snippet.replace(/[«»]/g, '').slice(0, 60);
       table.push([
+        chalk.dim(entry.id),
         entry.title,
         entry.author,
         entry.type,
@@ -184,6 +185,7 @@ export function formatSearchResults(
     } else if (showFreshness) {
       const label = options.freshness!.get(entry.id);
       table.push([
+        chalk.dim(entry.id),
         entry.title,
         entry.author,
         entry.type,
@@ -192,6 +194,7 @@ export function formatSearchResults(
       ]);
     } else {
       table.push([
+        chalk.dim(entry.id),
         entry.title,
         entry.author,
         entry.type,
