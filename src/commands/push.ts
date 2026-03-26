@@ -56,6 +56,7 @@ interface PushResult {
   type: string;
   filePath: string;
   tags: string[];
+  isNew: boolean;
 }
 
 /**
@@ -102,6 +103,10 @@ async function writeSingleEntry(
     summary,
   });
 
+  // Check if entry already exists (for create vs update feedback)
+  const existingPath = path.join(config.local, entry.filePath);
+  const isNew = !fs.existsSync(existingPath);
+
   const filePath = await writeEntry(config.local, entry);
 
   await recordReceipt(config.local, entry.id, config.author, 'cli');
@@ -112,6 +117,7 @@ async function writeSingleEntry(
     type: entry.type,
     filePath,
     tags: entry.tags,
+    isNew,
   };
 }
 
@@ -243,7 +249,8 @@ export const pushCommand = new Command('push')
         console.log(JSON.stringify(output, null, 2));
       } else if (results.length === 1 && errors.length === 0) {
         const r = results[0];
-        console.log(chalk.green(`✅ Pushed: ${r.title}`));
+        const verb = r.isNew ? 'Created' : 'Updated';
+        console.log(chalk.green(`✅ ${verb}: ${r.title}`));
         console.log(chalk.dim(`   ID: ${r.id}`));
         console.log(chalk.dim(`   Type: ${r.type}`));
         console.log(chalk.dim(`   File: ${r.filePath}`));
