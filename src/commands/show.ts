@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createIndex, getDbPath, getEntryById } from '../core/index-db.js';
+import { createIndex, getDbPath, resolveEntryId } from '../core/index-db.js';
 import { getRelatedEntries } from '../core/links.js';
 import { recordReceipt } from '../core/receipts.js';
 import { formatEntry } from '../utils/output.js';
@@ -17,13 +17,7 @@ export const showCommand = new Command('show')
       const db = createIndex(getDbPath());
 
       try {
-        const entry = getEntryById(db, entryId);
-
-        if (!entry) {
-          throw new Error(
-            `Entry "${entryId}" not found. Run "brain search" to find entries, or "brain list" to see all.`,
-          );
-        }
+        const { entry } = resolveEntryId(db, entryId);
 
         // Record a read receipt
         await recordReceipt(config.local, entry.id, config.author, 'cli');
