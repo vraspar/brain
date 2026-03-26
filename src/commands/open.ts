@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createIndex, getDbPath, getEntryById } from '../core/index-db.js';
+import { createIndex, getDbPath, resolveEntryId } from '../core/index-db.js';
 
 /**
  * Resolve the editor command. Checks $EDITOR, $VISUAL, then platform defaults.
@@ -32,10 +32,7 @@ export const openCommand = new Command('open')
       const db = createIndex(getDbPath());
       let filePath: string;
       try {
-        const entry = getEntryById(db, entryId);
-        if (!entry) {
-          throw new Error(`Entry "${entryId}" not found. Run "brain list" to see available entries.`);
-        }
+        const { entry } = resolveEntryId(db, entryId);
         filePath = entry.filePath;
       } finally {
         db.close();

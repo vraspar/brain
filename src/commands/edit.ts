@@ -3,7 +3,7 @@ import path from 'node:path';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createIndex, getDbPath, getEntryById, rebuildIndex } from '../core/index-db.js';
+import { createIndex, getDbPath, resolveEntryId, rebuildIndex } from '../core/index-db.js';
 import { parseEntry, serializeEntry, scanEntries } from '../core/entry.js';
 import { commitAndPush } from '../utils/git.js';
 import type { EntryType } from '../types.js';
@@ -35,15 +35,9 @@ export const editCommand = new Command('edit')
 
       let entry;
       try {
-        entry = getEntryById(db, entryId);
+        ({ entry } = resolveEntryId(db, entryId));
       } finally {
         db.close();
-      }
-
-      if (!entry) {
-        throw new Error(
-          `Entry "${entryId}" not found. Run "brain search" to find entries, or "brain list" to see all.`,
-        );
       }
 
       // Check that at least one edit option was provided

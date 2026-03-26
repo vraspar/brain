@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
-import { createIndex, getDbPath, getEntryById, rebuildIndex } from '../core/index-db.js';
+import { createIndex, getDbPath, resolveEntryId, rebuildIndex } from '../core/index-db.js';
 import { scanEntries } from '../core/entry.js';
 import { commitAndPush } from '../utils/git.js';
 
@@ -38,15 +38,9 @@ export const retractCommand = new Command('retract')
 
       let entry;
       try {
-        entry = getEntryById(db, entryId);
+        ({ entry } = resolveEntryId(db, entryId));
       } finally {
         db.close();
-      }
-
-      if (!entry) {
-        throw new Error(
-          `Entry "${entryId}" not found. Run "brain search" to find entries, or "brain list" to see all.`,
-        );
       }
 
       // Confirm unless --force
