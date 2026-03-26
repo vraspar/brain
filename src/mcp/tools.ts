@@ -37,6 +37,7 @@ export function registerTools(server: McpServer, context: BrainMcpContext): void
   registerUpdateEntry(server, context);
   registerListEntries(server, context);
   registerExploreTopic(server, context);
+  registerRetractEntry(server, context);
 }
 
 function registerPushKnowledge(server: McpServer, context: BrainMcpContext): void {
