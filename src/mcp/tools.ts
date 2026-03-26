@@ -8,6 +8,7 @@ import {
   getEntryById,
   getRecentEntries,
   rebuildIndex,
+  resolveEntryId,
   searchEntries,
 } from '../core/index-db.js';
 import { computeFreshness } from '../core/freshness.js';
@@ -184,17 +185,7 @@ function registerGetEntry(server: McpServer, context: BrainMcpContext): void {
     },
     async ({ id }) => {
       try {
-        const entry = getEntryById(context.db, id);
-
-        if (!entry) {
-          return {
-            content: [{
-              type: 'text' as const,
-              text: `Entry "${id}" not found. Use search_knowledge to find entries.`,
-            }],
-            isError: true,
-          };
-        }
+        const { entry } = resolveEntryId(context.db, id);
 
         await recordReceipt(context.config.local, entry.id, context.config.author, 'mcp');
 
@@ -376,16 +367,7 @@ function registerUpdateEntry(server: McpServer, context: BrainMcpContext): void 
     },
     async ({ id, title, tags, type, summary, content, status }) => {
       try {
-        const existing = getEntryById(context.db, id);
-        if (!existing) {
-          return {
-            content: [{
-              type: 'text' as const,
-              text: `Entry "${id}" not found. Use search_knowledge to find entries.`,
-            }],
-            isError: true,
-          };
-        }
+        const { entry: existing } = resolveEntryId(context.db, id);
 
         // Merge only provided fields
         const updated: Entry = {
