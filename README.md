@@ -21,13 +21,20 @@ brain connect <url>                          # or join an existing one
 brain push ./guide.md                        # publish an entry
 brain push ./docs/*.md                       # batch import
 brain ingest https://github.com/team/repo    # import from another repo
-brain search "kubernetes"                    # full-text search
+brain search "kubernetes"                    # full-text search (interactive)
+brain show k8s-guide                         # view a full entry
+brain list                                   # list all entries
+brain list --stale                           # find stale entries
 brain digest                                 # what's new
 brain edit k8s-guide --add-tag helm          # update metadata
 brain open k8s-guide                         # open in $EDITOR
-brain status                                 # brain health dashboard
 brain trail kubernetes                       # follow connected entries
+brain stats                                  # read activity for your entries
 brain prune --dry-run                        # find stale content
+brain retract k8s-guide                      # remove an entry
+brain sync                                   # pull latest + rebuild index
+brain remote add <url>                       # add remote to local brain
+brain status                                 # brain health dashboard
 ```
 
 All commands support `--format json`. Run `brain <command> --help` for flags.

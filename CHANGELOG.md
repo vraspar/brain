@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-03-26
+
+### Added
+
+- Interactive search selection — `brain search` prompts to view a result inline
+- `--no-interactive` flag to disable the selection prompt
+- `--shallow` flag for `brain ingest` (fastest clone, no freshness dating)
+
+### Changed
+
+- Ingest uses partial clone (`--filter=blob:none`) by default — 10x faster on large repos
+- Batch git log replaces per-file calls — single git process for all file dates
+- `brain list` and `brain search` output includes entry ID column
+
+### Fixed
+
+- Slug collisions during ingest: duplicate titles get `-2`, `-3` suffix
+- `brain sync` on local-only brains rebuilds index locally with friendly message
+- Removed stale `brain join` reference from getting-started docs
+
 ## [0.4.0] - 2026-03-25
 
 ### Added
