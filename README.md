@@ -55,7 +55,7 @@ All commands support `--format json`. Run `brain <command> --help` for flags.
 - **Repo ingest** — import docs from external repos with freshness scoring
 - **Freshness** — entries scored Fresh/Aging/Stale; `brain prune` archives stale ones
 - **Knowledge trails** — auto-linked entries via tag overlap, title similarity, cross-references
-- **MCP server** — 7 tools + 2 resources, works with Claude, Copilot, Cursor, Windsurf
+- **MCP server** — 10 tools + 2 resources, works with Claude, Copilot, Cursor, Windsurf
 - **Read analytics** — per-entry read tracking across CLI and MCP
 - **Auto-detection** — title, type, and tags inferred from content on push
 

@@ -714,7 +714,7 @@ brain sync
 
 ## brain serve
 
-Start the MCP server on stdio transport.
+Start the MCP server on stdio transport. Exposes 10 tools and 2 resources.
 
 ```
 brain serve

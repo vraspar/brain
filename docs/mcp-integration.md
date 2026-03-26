@@ -293,6 +293,43 @@ Update an existing entry's fields. Commits changes automatically.
 
 Only provided fields are updated. Updates the `updated` timestamp. Setting status to `"archived"` hides the entry from search, digest, and recommendations.
 
+### list_entries
+
+List entries with optional filters. Useful for agents browsing the knowledge base.
+
+**Parameters:**
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `type` | `"guide"` \| `"skill"` | no | — | Filter by entry type |
+| `tag` | string | no | — | Filter by tag |
+| `author` | string | no | — | Filter by author |
+| `fresh_only` | boolean | no | `false` | Only return fresh entries |
+| `limit` | number | no | `20` | Maximum entries |
+
+### explore_topic
+
+Explore a topic by following knowledge trails — combines FTS5 search with auto-computed entry links.
+
+**Parameters:**
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `topic` | string | yes | — | Topic to explore |
+| `limit` | number | no | `5` | Maximum entries |
+
+Returns entries with their related entries and relationship reasons.
+
+### retract_entry
+
+Archive an entry (reversible). Moves the file to `_archive/`, sets status to `archived`, and rebuilds the index.
+
+**Parameters:**
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `id` | string | yes | — | Entry ID (slug) to archive |
+
 ## Resources
 
 Resources provide ambient context that MCP clients can read without an explicit tool call. Both return `text/markdown` content.
