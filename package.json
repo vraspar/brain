@@ -1,6 +1,6 @@
 {
   "name": "@vraspar/brain",
-  "version": "0.5.0",
+  "version": "0.1.0-alpha.1",
   "description": "CLI-first knowledge sharing for dev teams",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,16 @@
     "lint": "eslint src/ test/",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["cli", "knowledge-sharing", "mcp", "fts5", "team", "git", "sqlite", "search"],
+  "keywords": [
+    "cli",
+    "knowledge-sharing",
+    "mcp",
+    "fts5",
+    "team",
+    "git",
+    "sqlite",
+    "search"
+  ],
   "author": "vraspar",
   "license": "MIT",
   "repository": {
