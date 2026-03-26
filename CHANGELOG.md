@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `list_entries` MCP tool — agents can list all entries with optional filters (#40)
 - `explore_topic` MCP tool — agents can follow knowledge trails via FTS5 + link traversal (#40)
+- `retract_entry` MCP tool — agents can archive entries (reversible)
 - Partial ID matching in `get_entry` and `update_entry` MCP tools via `resolveEntryId` (#41)
 
 ### Fixed
