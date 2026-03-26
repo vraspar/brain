@@ -586,3 +586,72 @@ function registerExploreTopic(server: McpServer, context: BrainMcpContext): void
     },
   );
 }
+
+// --- Keyword extraction for recommendations ---
+
+const STOP_WORDS = new Set([
+  'i', 'im', 'me', 'my', 'we', 'our', 'you', 'your', 'he', 'she', 'it', 'its',
+  'they', 'them', 'this', 'that', 'these', 'those', 'a', 'an', 'the', 'and',
+  'but', 'or', 'for', 'nor', 'not', 'so', 'yet', 'to', 'of', 'in', 'on', 'at',
+  'by', 'from', 'with', 'about', 'into', 'through', 'during', 'before', 'after',
+  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+  'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
+  'can', 'shall', 'need', 'get', 'got', 'how', 'what', 'when', 'where', 'why',
+  'which', 'who', 'whom', 'if', 'then', 'than', 'just', 'very', 'also', 'some',
+  'any', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other',
+  'no', 'up', 'out', 'off', 'over', 'under', 'again', 'here', 'there',
+]);
+
+function extractSignificantWords(text: string): string[] {
+  const words = text.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+  return [...new Set(words)].slice(0, 10);
+}
+
+// --- retract_entry ---
+
+function registerRetractEntry(server: McpServer, context: BrainMcpContext): void {
+  server.tool(
+    'retract_entry',
+    {
+      id: z.string().describe('Entry ID (slug) to retract — archives the entry (reversible)'),
+    },
+    async ({ id }) => {
+      try {
+        const { entry } = resolveEntryId(context.db, id);
+        const fullPath = path.join(context.config.local, entry.filePath);
+        const archivePath = path.join(context.config.local, '_archive', entry.filePath);
+
+        if (!fs.existsSync(fullPath)) {
+          return {
+            content: [{ type: 'text' as const, text: `❌ Entry file not found at "${entry.filePath}".` }],
+            isError: true,
+          };
+        }
+
+        const raw = fs.readFileSync(fullPath, 'utf-8');
+        const parsed = matter(raw);
+        const newData = { ...parsed.data, status: 'archived', archived_at: new Date().toISOString(), archived_reason: 'retracted' };
+        const updated = matter.stringify(parsed.content, newData);
+
+        fs.mkdirSync(path.dirname(archivePath), { recursive: true });
+        fs.writeFileSync(archivePath, updated, 'utf-8');
+        fs.unlinkSync(fullPath);
+
+        try {
+          await commitAndPush(context.config.local, [entry.filePath, `_archive/${entry.filePath}`], `Retract ${entry.type}: ${entry.title}`, { skipPush: !context.config.remote });
+        } catch { /* commit may fail */ }
+
+        const entries = await scanEntries(context.config.local);
+        rebuildIndex(context.db, entries);
+
+        return { content: [{ type: 'text' as const, text: `✅ Retracted: ${entry.title}\nArchived to: _archive/${entry.filePath}\nRestore with: brain restore ${entry.id}` }] };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { content: [{ type: 'text' as const, text: `❌ Failed to retract: ${message}` }], isError: true };
+      }
+    },
+  );
+}
