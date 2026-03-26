@@ -123,12 +123,14 @@ export const pushCommand = new Command('push')
   .option('--type <type>', 'Entry type: guide or skill (default: auto-detect or guide)')
   .option('--tags <tags>', 'Comma-separated tags (auto-extracted if omitted)')
   .option('--summary <summary>', 'Short summary of the entry')
+  .option('--dry-run', 'Preview what would be pushed without writing')
   .action(async (fileArgs: string[], options: {
     file?: string;
     title?: string;
     type?: string;
     tags?: string;
     summary?: string;
+    dryRun?: boolean;
   }) => {
     const format = pushCommand.parent?.opts().format ?? 'text';
 
@@ -157,6 +159,34 @@ export const pushCommand = new Command('push')
       // For multi-file push, --title override only applies to single file
       if (filePaths.length > 1 && options.title) {
         throw new Error('--title cannot be used with multiple files. Each file\'s title is auto-detected.');
+      }
+
+      // Dry run: preview without writing
+      if (options.dryRun) {
+        const previews: { file: string; title: string; type: string; tags: string[] }[] = [];
+        for (const fp of filePaths) {
+          const raw = fs.readFileSync(fp, 'utf-8');
+          const parsed = parseInputContent(raw);
+          const title = options.title ?? parsed.title ?? extractTitle(raw) ?? titleFromFilename(fp);
+          const typeStr = options.type ?? parsed.type ?? 'guide';
+          const tags = options.tags
+            ? options.tags.split(',').map((t) => t.trim()).filter(Boolean)
+            : parsed.tags ?? extractTags(parsed.content);
+          previews.push({ file: path.basename(fp), title, type: typeStr, tags });
+        }
+
+        if (format === 'json') {
+          console.log(JSON.stringify({ status: 'dry-run', entries: previews }, null, 2));
+        } else {
+          console.log(chalk.bold(`📋 Dry run — would push ${previews.length} entries:`));
+          for (const p of previews) {
+            const tagStr = p.tags.length > 0 ? chalk.dim(` [${p.tags.join(', ')}]`) : '';
+            console.log(`   ${p.file} → "${p.title}" (${p.type})${tagStr}`);
+          }
+          console.log('');
+          console.log(chalk.dim('No files written. Run without --dry-run to push.'));
+        }
+        return;
       }
 
       const results: PushResult[] = [];

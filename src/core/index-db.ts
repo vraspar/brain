@@ -285,6 +285,50 @@ export function getEntryById(db: Database.Database, id: string): Entry | null {
   return row ? rowToEntry(row) : null;
 }
 
+export interface ResolveResult {
+  entry: Entry;
+  exactMatch: boolean;
+}
+
+/**
+ * Resolve a partial entry ID to a full entry.
+ * Tries: exact match → startsWith → includes.
+ * Returns the entry if exactly one match, throws with suggestions if ambiguous.
+ */
+export function resolveEntryId(db: Database.Database, partialId: string): ResolveResult {
+  // 1. Exact match
+  const exact = getEntryById(db, partialId);
+  if (exact) return { entry: exact, exactMatch: true };
+
+  // 2. startsWith match
+  const allEntries = getAllEntries(db);
+  const prefixMatches = allEntries.filter((e) => e.id.startsWith(partialId));
+  if (prefixMatches.length === 1) return { entry: prefixMatches[0], exactMatch: false };
+
+  // 3. includes match (fallback)
+  if (prefixMatches.length === 0) {
+    const containsMatches = allEntries.filter((e) => e.id.includes(partialId));
+    if (containsMatches.length === 1) return { entry: containsMatches[0], exactMatch: false };
+    if (containsMatches.length > 1) {
+      const ids = containsMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
+      throw new Error(
+        `Ambiguous ID "${partialId}" matches ${containsMatches.length} entries:\n${ids}\nBe more specific.`,
+      );
+    }
+  }
+
+  if (prefixMatches.length > 1) {
+    const ids = prefixMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
+    throw new Error(
+      `Ambiguous ID "${partialId}" matches ${prefixMatches.length} entries:\n${ids}\nBe more specific.`,
+    );
+  }
+
+  throw new Error(
+    `Entry "${partialId}" not found. Run "brain search" to find entries, or "brain list" to see all.`,
+  );
+}
+
 /**
  * Get all entries by a specific author.
  */

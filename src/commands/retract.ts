@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
+import matter from 'gray-matter';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
@@ -16,7 +17,7 @@ async function confirmRetract(title: string): Promise<boolean> {
 
   try {
     const answer = await rl.question(
-      chalk.yellow(`⚠ Retract "${title}"? This removes the file and commits the deletion. [y/N] `),
+      chalk.yellow(`⚠ Retract "${title}"? This archives the entry (reversible with brain restore). [y/N] `),
     );
     return answer.trim().toLowerCase() === 'y';
   } finally {
@@ -61,18 +62,37 @@ export const retractCommand = new Command('retract')
         }
       }
 
-      // Delete the file from disk
+      // Archive the entry (move to _archive/, update status)
       const fullPath = path.join(config.local, entry.filePath);
+      const archivePath = path.join(config.local, '_archive', entry.filePath);
+
       if (fs.existsSync(fullPath)) {
+        // Read and update frontmatter
+        const raw = fs.readFileSync(fullPath, 'utf-8');
+        const parsed = matter(raw);
+        const newData = {
+          ...parsed.data,
+          status: 'archived',
+          archived_at: new Date().toISOString(),
+          archived_reason: 'retracted',
+        };
+        const updated = matter.stringify(parsed.content, newData);
+
+        // Write to archive location
+        fs.mkdirSync(path.dirname(archivePath), { recursive: true });
+        fs.writeFileSync(archivePath, updated, 'utf-8');
+
+        // Remove original
         fs.unlinkSync(fullPath);
       }
 
-      // Commit the deletion (git add stages the removal)
+      // Commit the changes
       const commitMessage = `Retract ${entry.type}: ${entry.title}`;
+      const filesToCommit = [entry.filePath, `_archive/${entry.filePath}`];
       if (config.remote) {
-        await commitAndPush(config.local, [entry.filePath], commitMessage);
+        await commitAndPush(config.local, filesToCommit, commitMessage);
       } else {
-        await commitAndPush(config.local, [entry.filePath], commitMessage, { skipPush: true });
+        await commitAndPush(config.local, filesToCommit, commitMessage, { skipPush: true });
         if (format !== 'json') {
           console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
         }
@@ -98,7 +118,8 @@ export const retractCommand = new Command('retract')
       } else {
         console.log(chalk.green(`✅ Retracted: ${entry.title}`));
         console.log(chalk.dim(`   ID: ${entry.id}`));
-        console.log(chalk.dim(`   File removed: ${entry.filePath}`));
+        console.log(chalk.dim(`   Archived to: _archive/${entry.filePath}`));
+        console.log(chalk.dim('   Restore with: brain restore ' + entry.id));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
