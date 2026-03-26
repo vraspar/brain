@@ -38,7 +38,7 @@ export const ingestCommand = new Command('ingest')
   .option('--exclude <glob...>', 'Exclude paths matching glob (repeatable)')
   .option('--dry-run', 'Preview without importing')
   .option('--type <type>', 'Force entry type for all imports')
-  .option('--source-tag', 'Auto-tag with source repo name')
+  .option('--source-tag [tag]', 'Tag entries with source name or custom string')
   .option('--max <n>', 'Maximum files to import', '100')
   .option('--overwrite', 'Overwrite existing entries with same slug')
   .option('--shallow', 'Use shallow clone (fastest, but no freshness dating)')
@@ -47,7 +47,7 @@ export const ingestCommand = new Command('ingest')
     exclude?: string[];
     dryRun?: boolean;
     type?: string;
-    sourceTag?: boolean;
+    sourceTag?: boolean | string;
     max: string;
     overwrite?: boolean;
     shallow?: boolean;
