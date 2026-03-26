@@ -1,22 +1,39 @@
 {
-  "name": "@team/brain",
-  "version": "0.1.0",
+  "name": "@vraspar/brain",
+  "version": "0.5.0",
   "description": "CLI-first knowledge sharing for dev teams",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "brain": "dist/index.js"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src/ test/"
+    "lint": "eslint src/ test/",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": ["knowledge", "team", "cli", "mcp"],
-  "author": "",
+  "keywords": ["cli", "knowledge-sharing", "mcp", "fts5", "team", "git", "sqlite", "search"],
+  "author": "vraspar",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vraspar/brain.git"
+  },
+  "homepage": "https://github.com/vraspar/brain",
+  "bugs": {
+    "url": "https://github.com/vraspar/brain/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "better-sqlite3": "^12.8.0",
