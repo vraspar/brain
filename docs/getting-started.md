@@ -84,8 +84,6 @@ Output:
    Try: brain digest
 ```
 
-`brain join <url>` also works as a hidden alias for `brain connect` (not shown in `--help`).
-
 ## Push your first entry
 
 Write a markdown file with your knowledge, then push it:
