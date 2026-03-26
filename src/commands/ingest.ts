@@ -3,9 +3,10 @@ import chalk from 'chalk';
 import { loadConfig } from '../core/config.js';
 import { runIngest, extractRepoName } from '../core/ingest.js';
 import { scanEntries } from '../core/entry.js';
-import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
+import { createIndex, rebuildIndex, getDbPath, updateFreshnessScores } from '../core/index-db.js';
 import { commitAndPush } from '../utils/git.js';
 import { upsertSource } from '../core/sources.js';
+import { buildUsageStatsMap } from '../core/freshness-stats.js';
 import type { EntryType, IngestCandidate } from '../types.js';
 
 function freshnessIcon(freshness: string): string {
@@ -130,6 +131,10 @@ export const ingestCommand = new Command('ingest')
           const entries = await scanEntries(config.local);
           rebuildIndex(db, entries);
 
+          // Compute freshness scores for ingested entries
+          const statsMap = buildUsageStatsMap(config.local, '30d');
+          updateFreshnessScores(db, statsMap);
+
           const entryFiles = entries
             .filter(e => e.source_repo === repoName)
             .map(e => e.filePath);
@@ -145,6 +150,10 @@ export const ingestCommand = new Command('ingest')
           // Local-only: rebuild index
           const entries = await scanEntries(config.local);
           rebuildIndex(db, entries);
+
+          // Compute freshness scores
+          const statsMap = buildUsageStatsMap(config.local, '30d');
+          updateFreshnessScores(db, statsMap);
         }
 
         // Register source for future sync

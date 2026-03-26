@@ -108,8 +108,8 @@ export function createIndex(dbPath: string): Database.Database {
  */
 export function rebuildIndex(db: Database.Database, entries: Entry[]): void {
   const insertEntry = db.prepare(`
-    INSERT OR REPLACE INTO entries (id, title, type, author, created_at, updated_at, tags, status, related_repos, related_tools, summary, content, file_path)
-    VALUES (@id, @title, @type, @author, @created_at, @updated_at, @tags, @status, @related_repos, @related_tools, @summary, @content, @file_path)
+    INSERT OR REPLACE INTO entries (id, title, type, author, created_at, updated_at, tags, status, related_repos, related_tools, summary, content, file_path, source_repo, source_path, source_content_hash)
+    VALUES (@id, @title, @type, @author, @created_at, @updated_at, @tags, @status, @related_repos, @related_tools, @summary, @content, @file_path, @source_repo, @source_path, @source_content_hash)
   `);
 
   const transaction = db.transaction((entryList: Entry[]) => {
@@ -132,6 +132,9 @@ export function rebuildIndex(db: Database.Database, entries: Entry[]): void {
         summary: entry.summary ?? null,
         content: entry.content,
         file_path: entry.filePath,
+        source_repo: entry.source_repo ?? null,
+        source_path: entry.source_path ?? null,
+        source_content_hash: entry.source_content_hash ?? null,
       });
     }
   });

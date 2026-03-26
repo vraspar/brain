@@ -4,7 +4,9 @@ import Table from 'cli-table3';
 import { loadConfig } from '../core/config.js';
 import { loadSources, removeSource } from '../core/sources.js';
 import { syncSource } from '../core/source-sync.js';
-import { createIndex, getDbPath } from '../core/index-db.js';
+import { createIndex, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
+import { scanEntries } from '../core/entry.js';
+import { buildUsageStatsMap } from '../core/freshness-stats.js';
 
 export const sourcesCommand = new Command('sources')
   .description('Manage external source repositories')
@@ -88,6 +90,14 @@ sourcesCommand
 
         if (format === 'json') {
           console.log(JSON.stringify(results, null, 2));
+        }
+
+        // Rebuild index after sync to pick up new/updated/deleted entries
+        if (!options.dryRun) {
+          const entries = await scanEntries(config.local);
+          rebuildIndex(db, entries);
+          const statsMap = buildUsageStatsMap(config.local, '30d');
+          updateFreshnessScores(db, statsMap);
         }
       } finally {
         db.close();
