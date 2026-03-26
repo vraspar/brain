@@ -157,7 +157,7 @@ export const ingestCommand = new Command('ingest')
             lastSync: new Date().toISOString(),
             entryCount: result.imported.length,
             type: options.type as EntryType | undefined,
-            sourceTag: options.sourceTag ?? false,
+            sourceTag: typeof options.sourceTag === 'string' ? options.sourceTag : (options.sourceTag ? true : false),
           });
         }
 

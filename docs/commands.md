@@ -117,16 +117,6 @@ brain connect https://github.com/acme/brain-hub.git
 
 ---
 
-## brain join
-
-Hidden alias for `brain connect`. Not shown in `brain --help` output but works identically. Kept for backward compatibility with earlier documentation.
-
-```
-brain join <url> [--author <name>]
-```
-
----
-
 ## brain push
 
 Push one or more entries to the repository, commit, and push to the remote.
@@ -262,7 +252,7 @@ brain digest --format json          # machine-readable
 Full-text search across all entries using SQLite FTS5 with BM25 ranking. Results include contextual snippets by default.
 
 ```
-brain search <query> [--limit <n>] [--no-preview]
+brain search <query> [--limit <n>] [--no-preview] [--no-interactive]
 ```
 
 | Argument/Flag | Required | Description |
@@ -270,6 +260,11 @@ brain search <query> [--limit <n>] [--no-preview]
 | `<query>` | Yes | Search terms. Supports prefix matching (e.g. "kube" matches "kubernetes"). |
 | `--limit <n>` | No | Maximum results. Default: 20. |
 | `--no-preview` | No | Hide content preview snippets from results. |
+| `--no-interactive` | No | Skip the selection prompt (show results only). |
+
+### Interactive mode
+
+In a TTY, search results are followed by a numbered selection prompt. Choose a result to view its full content and related entries. Disable with `--no-interactive` or `--format json`.
 
 ### Search behavior
 
@@ -478,15 +473,22 @@ Uses `$EDITOR`, `$VISUAL`, or platform default (`open` on macOS, `xdg-open` on L
 
 ---
 
-## brain remote add
+## brain remote
 
-Add a git remote to a local-only brain.
+Manage the brain's git remote.
 
 ```
-brain remote add <url>
+brain remote add <url>       # add a remote to a local-only brain
+brain remote remove          # disconnect from the current remote
 ```
 
-Sets the origin remote and attempts an initial push. Fails if a remote is already configured.
+### brain remote add
+
+Sets the origin remote, attempts an initial push, and prints a shareable `brain connect` command. Fails if a remote is already configured.
+
+### brain remote remove
+
+Removes the origin remote from git and clears it from config. The brain becomes local-only. Committed entries remain intact.
 
 ---
 

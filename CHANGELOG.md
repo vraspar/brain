@@ -15,11 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `brain status` command showing health dashboard: entry counts, freshness distribution, storage sizes, sync state
 - `brain open <entry-id>` command to open entry files in `$EDITOR` / `$VISUAL` (uses `execFileSync`, no shell injection)
 - `brain remote add <url>` command to add a remote to local-only brains
+- `brain remote remove` command to disconnect from a remote
 - `brain sources` command group for managing external source repositories (`list`, `sync`, `remove`)
 - Incremental source sync via persistent bare mirrors and `git fetch`
 - `get_recommendations` MCP tool for topic-based entry suggestions using FTS5 + tag overlap + freshness
 - `update_entry` MCP tool for partial field updates (title, tags, type, summary, content, status)
 - Source registry at `~/.brain/sources.json` for tracking ingested repos
+- Interactive search selection: search results show a numbered prompt to view entries inline
+- `--no-interactive` flag for `brain search` to skip the selection prompt
+
+### Changed
+
+- Ingest uses partial clone (`--filter=blob:none`) and batch `git log` for faster imports
+- Source path and content hash stored during ingest for incremental sync
+- Ingest pipeline excludes `docs/` and `_archive/` directories from source repos
+
+### Fixed
+
+- Remote recovery: `brain connect` re-adds origin if missing from git config
+- Push resilience: local-only brains commit without attempting push
+- Source registration wired into ingest pipeline
 
 ## [0.3.0] - 2026-03-24
 
