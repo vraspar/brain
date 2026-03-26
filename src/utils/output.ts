@@ -8,6 +8,13 @@ export interface FormatOptions {
   format?: 'text' | 'json';
 }
 
+const MAX_TITLE_LENGTH = 40;
+
+function truncateTitle(title: string, maxLength = MAX_TITLE_LENGTH): string {
+  if (title.length <= maxLength) return title;
+  return title.slice(0, maxLength - 3) + '...';
+}
+
 export function formatEntry(entry: Entry, options: FormatOptions = {}): string {
   if (options.format === 'json') {
     return JSON.stringify(entry, null, 2);
@@ -75,7 +82,7 @@ function buildDigestTable(entries: DigestEntry[]): string {
 
   for (const entry of entries) {
     table.push([
-      entry.title,
+      truncateTitle(entry.title),
       entry.author,
       entry.type,
       entry.tags.slice(0, 3).join(', '),
@@ -119,7 +126,7 @@ export function formatStats(stats: StatsResult[], options: FormatOptions = {}): 
   });
 
   for (const stat of stats) {
-    table.push([stat.title, stat.accessCount.toString(), stat.uniqueReaders.toString(), stat.period]);
+    table.push([truncateTitle(stat.title), stat.accessCount.toString(), stat.uniqueReaders.toString(), stat.period]);
   }
 
   return table.toString();
@@ -176,7 +183,7 @@ export function formatSearchResults(
       const cleanSnippet = snippet.replace(/[«»]/g, '').slice(0, 60);
       table.push([
         chalk.dim(entry.id),
-        entry.title,
+        truncateTitle(entry.title),
         entry.author,
         entry.type,
         entry.tags.slice(0, 3).join(', '),
@@ -186,7 +193,7 @@ export function formatSearchResults(
       const label = options.freshness!.get(entry.id);
       table.push([
         chalk.dim(entry.id),
-        entry.title,
+        truncateTitle(entry.title),
         entry.author,
         entry.type,
         label ? freshnessIndicator(label) : statusColor(entry.status),
@@ -195,7 +202,7 @@ export function formatSearchResults(
     } else {
       table.push([
         chalk.dim(entry.id),
-        entry.title,
+        truncateTitle(entry.title),
         entry.author,
         entry.type,
         entry.tags.slice(0, 3).join(', '),
