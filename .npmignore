@@ -1,0 +1,27 @@
+# Source (dist/ is published via files field)
+src/
+test/
+
+# Project files
+website/
+docs/
+scripts/
+presentations/
+.github/
+
+# Config
+tsconfig.json
+tsconfig.base.json
+vitest.config.ts
+eslint.config.mjs
+flightdeck.config.example.yaml
+
+# Dev files
+*.test.ts
+.gitignore
+CONTRIBUTING.md
+SECURITY.md
+CHANGELOG.md
+DESIGN.md
+ROADMAP.md
+test-*.md
