@@ -9,21 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Interactive search selection — `brain search` prompts to view a result inline
+- Interactive search selection — `brain search` prompts to view a result inline (#20)
 - `--no-interactive` flag to disable the selection prompt
-- `--shallow` flag for `brain ingest` (fastest clone, no freshness dating)
+- `--shallow` flag for `brain ingest` (fastest clone, no freshness dating) (#18)
+- Grouped help output — commands organized by category (#26)
+- `--source-tag` accepts optional custom string value (#27)
 
 ### Changed
 
-- Ingest uses partial clone (`--filter=blob:none`) by default — 10x faster on large repos
+- Ingest uses partial clone (`--filter=blob:none`) by default — 10x faster on large repos (#18)
 - Batch git log replaces per-file calls — single git process for all file dates
-- `brain list` and `brain search` output includes entry ID column
+- `brain list` and `brain search` output includes entry ID column (#10)
 
 ### Fixed
 
-- Slug collisions during ingest: duplicate titles get `-2`, `-3` suffix
-- `brain sync` on local-only brains rebuilds index locally with friendly message
-- Removed stale `brain join` reference from getting-started docs
+- Slug collisions during ingest: duplicate titles get `-2`, `-3` suffix (#10)
+- `brain sync` on local-only brains rebuilds index locally with friendly message (#13)
+- Source columns in index, rebuild after sync, freshness on ingest (#29)
+- Removed stale `brain join` reference from getting-started docs (#28)
 
 ## [0.4.0] - 2026-03-25
 

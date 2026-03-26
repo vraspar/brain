@@ -31,9 +31,12 @@ brain open k8s-guide                         # open in $EDITOR
 brain trail kubernetes                       # follow connected entries
 brain stats                                  # read activity for your entries
 brain prune --dry-run                        # find stale content
+brain restore k8s-guide                      # undo a prune
 brain retract k8s-guide                      # remove an entry
 brain sync                                   # pull latest + rebuild index
 brain remote add <url>                       # add remote to local brain
+brain sources list                           # show ingested source repos
+brain serve                                  # start MCP server (stdio)
 brain status                                 # brain health dashboard
 ```
 
