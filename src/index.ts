@@ -31,25 +31,104 @@ program
   .option('--format <format>', 'Output format: text or json', 'text')
   .option('-q, --quiet', 'Suppress non-essential output');
 
-program.addCommand(initCommand);
-program.addCommand(connectCommand);
+// Register all commands
 program.addCommand(pushCommand);
-program.addCommand(digestCommand);
 program.addCommand(searchCommand);
 program.addCommand(showCommand);
-program.addCommand(listCommand);
-program.addCommand(statsCommand);
+program.addCommand(digestCommand);
 program.addCommand(syncCommand);
-program.addCommand(serveCommand);
-program.addCommand(retractCommand);
-program.addCommand(trailCommand);
-program.addCommand(pruneCommand);
-program.addCommand(ingestCommand);
-program.addCommand(restoreCommand);
-program.addCommand(sourcesCommand);
-program.addCommand(remoteCommand);
-program.addCommand(openCommand);
 program.addCommand(editCommand);
+program.addCommand(retractCommand);
+program.addCommand(openCommand);
+program.addCommand(listCommand);
+program.addCommand(trailCommand);
+program.addCommand(sourcesCommand);
+program.addCommand(ingestCommand);
+program.addCommand(pruneCommand);
+program.addCommand(restoreCommand);
+program.addCommand(initCommand);
+program.addCommand(connectCommand);
+program.addCommand(remoteCommand);
 program.addCommand(statusCommand);
+program.addCommand(serveCommand);
+program.addCommand(statsCommand);
+
+// Grouped help output
+const COMMAND_GROUPS: { heading: string; commands: string[] }[] = [
+  { heading: 'Core', commands: ['push', 'search', 'show', 'digest', 'sync'] },
+  { heading: 'Entry Management', commands: ['edit', 'retract', 'open', 'list'] },
+  { heading: 'Discovery', commands: ['trail', 'sources'] },
+  { heading: 'Content Lifecycle', commands: ['ingest', 'prune', 'restore'] },
+  { heading: 'Setup', commands: ['init', 'connect', 'remote', 'status', 'serve', 'stats'] },
+];
+
+program.configureHelp({
+  formatHelp(cmd, helper) {
+    const termWidth = helper.padWidth(cmd, helper);
+    const helpWidth = helper.helpWidth ?? 80;
+
+    const lines: string[] = [];
+
+    // Usage
+    lines.push(`Usage: ${helper.commandUsage(cmd)}`);
+    lines.push('');
+
+    // Description
+    const desc = helper.commandDescription(cmd);
+    if (desc) {
+      lines.push(desc);
+      lines.push('');
+    }
+
+    // Options
+    const opts = helper.visibleOptions(cmd);
+    if (opts.length > 0) {
+      lines.push('Options:');
+      for (const opt of opts) {
+        const optStr = helper.optionTerm(opt);
+        const optDesc = helper.optionDescription(opt);
+        const padding = ' '.repeat(Math.max(termWidth - optStr.length + 2, 2));
+        lines.push(`  ${optStr}${padding}${optDesc}`);
+      }
+      lines.push('');
+    }
+
+    // Grouped commands
+    const cmdMap = new Map(
+      helper.visibleCommands(cmd).map((c) => [c.name(), c]),
+    );
+
+    for (const group of COMMAND_GROUPS) {
+      const groupCmds = group.commands
+        .map((name) => cmdMap.get(name))
+        .filter((c): c is Command => c !== undefined);
+
+      if (groupCmds.length === 0) continue;
+
+      lines.push(`${group.heading}:`);
+      for (const c of groupCmds) {
+        const term = helper.subcommandTerm(c);
+        const desc = helper.subcommandDescription(c);
+        const padding = ' '.repeat(Math.max(termWidth - term.length + 2, 2));
+        lines.push(`  ${term}${padding}${desc}`);
+        cmdMap.delete(c.name());
+      }
+      lines.push('');
+    }
+
+    // Any ungrouped commands (e.g. help)
+    if (cmdMap.size > 0) {
+      for (const [, c] of cmdMap) {
+        const term = helper.subcommandTerm(c);
+        const desc = helper.subcommandDescription(c);
+        const padding = ' '.repeat(Math.max(termWidth - term.length + 2, 2));
+        lines.push(`  ${term}${padding}${desc}`);
+      }
+      lines.push('');
+    }
+
+    return lines.join('\n');
+  },
+});
 
 program.parse();
