@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { initCommand } from './commands/init.js';
 import { connectCommand } from './commands/connect.js';
@@ -22,12 +25,15 @@ import { openCommand } from './commands/open.js';
 import { editCommand } from './commands/edit.js';
 import { statusCommand } from './commands/status.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
+
 const program = new Command();
 
 program
   .name('brain')
   .description('CLI-first knowledge sharing for dev teams')
-  .version('0.1.0')
+  .version(pkg.version)
   .option('--format <format>', 'Output format: text or json', 'text')
   .option('-q, --quiet', 'Suppress non-essential output');
 

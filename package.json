@@ -1,6 +1,6 @@
 {
   "name": "@vraspar/brain",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "CLI-first knowledge sharing for dev teams",
   "type": "module",
   "main": "dist/index.js",
