@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-alpha.3] - 2026-03-26
+
+### Added
+
+- `list_entries` MCP tool — agents can list all entries with optional filters (#40)
+- `explore_topic` MCP tool — agents can follow knowledge trails via FTS5 + link traversal (#40)
+- Partial ID matching in `get_entry` and `update_entry` MCP tools via `resolveEntryId` (#41)
+
+### Fixed
+
+- MCP `get_entry` and `update_entry` now accept partial entry IDs (#41)
+
 ## [0.4.1] - 2026-03-26
 
 ### Added

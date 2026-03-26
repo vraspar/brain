@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import matter from 'gray-matter';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createEntry, scanEntries, serializeEntry, writeEntry } from '../core/entry.js';
@@ -48,6 +51,13 @@ function registerPushKnowledge(server: McpServer, context: BrainMcpContext): voi
     },
     async ({ title, content, type, tags, summary }) => {
       try {
+        if (!content.trim()) {
+          return {
+            content: [{ type: 'text' as const, text: '❌ Content cannot be empty.' }],
+            isError: true,
+          };
+        }
+
         const entry = createEntry({
           title,
           content,
@@ -265,9 +275,11 @@ function registerGetRecommendations(server: McpServer, context: BrainMcpContext)
     },
     async ({ topic, limit }) => {
       try {
-        // Extract keywords from the topic using shared tech terms
-        const keywords = extractTags(topic);
-        const searchQuery = keywords.length > 0 ? keywords.join(' ') : topic;
+        // Extract keywords: tech terms + significant words (filter stop words)
+        const techKeywords = extractTags(topic);
+        const words = topic.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+        const allKeywords = [...new Set([...techKeywords, ...words])];
+        const searchQuery = allKeywords.length > 0 ? allKeywords.join(' ') : topic;
 
         // Strategy 1: FTS5 search on the topic (exclude archived entries)
         const searchResults = searchEntries(context.db, searchQuery, limit * 2)
@@ -276,7 +288,7 @@ function registerGetRecommendations(server: McpServer, context: BrainMcpContext)
         // Strategy 2: Tag overlap scoring for active entries only
         const allEntries = getAllEntries(context.db)
           .filter((entry) => entry.status !== 'archived');
-        const topicTagSet = new Set(keywords.map((k) => k.toLowerCase()));
+        const topicTagSet = new Set(allKeywords.map((k) => k.toLowerCase()));
 
         const tagScored = allEntries
           .filter((entry) => !searchResults.some((r) => r.id === entry.id))
