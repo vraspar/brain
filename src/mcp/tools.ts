@@ -3,14 +3,18 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createEntry, scanEntries, serializeEntry, writeEntry } from '../core/entry.js';
 import {
   getAllEntries,
+  getEntriesByAuthor,
+  getEntriesWithFreshness,
   getEntryById,
   getRecentEntries,
   rebuildIndex,
+  resolveEntryId,
   searchEntries,
 } from '../core/index-db.js';
 import { computeFreshness } from '../core/freshness.js';
 import { buildUsageStatsMap } from '../core/freshness-stats.js';
 import { getStats, recordReceipt } from '../core/receipts.js';
+import { getTrailEntries } from '../core/links.js';
 import { commitAndPush } from '../utils/git.js';
 import { extractTags } from '../utils/tags.js';
 import { parseTimeWindow } from '../utils/time.js';
@@ -28,6 +32,8 @@ export function registerTools(server: McpServer, context: BrainMcpContext): void
   registerBrainStats(server, context);
   registerGetRecommendations(server, context);
   registerUpdateEntry(server, context);
+  registerListEntries(server, context);
+  registerExploreTopic(server, context);
 }
 
 function registerPushKnowledge(server: McpServer, context: BrainMcpContext): void {
@@ -179,17 +185,7 @@ function registerGetEntry(server: McpServer, context: BrainMcpContext): void {
     },
     async ({ id }) => {
       try {
-        const entry = getEntryById(context.db, id);
-
-        if (!entry) {
-          return {
-            content: [{
-              type: 'text' as const,
-              text: `Entry "${id}" not found. Use search_knowledge to find entries.`,
-            }],
-            isError: true,
-          };
-        }
+        const { entry } = resolveEntryId(context.db, id);
 
         await recordReceipt(context.config.local, entry.id, context.config.author, 'mcp');
 
@@ -371,16 +367,7 @@ function registerUpdateEntry(server: McpServer, context: BrainMcpContext): void 
     },
     async ({ id, title, tags, type, summary, content, status }) => {
       try {
-        const existing = getEntryById(context.db, id);
-        if (!existing) {
-          return {
-            content: [{
-              type: 'text' as const,
-              text: `Entry "${id}" not found. Use search_knowledge to find entries.`,
-            }],
-            isError: true,
-          };
-        }
+        const { entry: existing } = resolveEntryId(context.db, id);
 
         // Merge only provided fields
         const updated: Entry = {
@@ -469,4 +456,121 @@ function formatEntryFull(entry: Entry): string {
   parts.push('', '---', '', entry.content);
 
   return parts.join('\n');
+}
+
+// --- list_entries ---
+
+function registerListEntries(server: McpServer, context: BrainMcpContext): void {
+  server.tool(
+    'list_entries',
+    {
+      type: z.enum(['guide', 'skill']).optional().describe('Filter by entry type'),
+      tag: z.string().optional().describe('Filter by tag'),
+      author: z.string().optional().describe('Filter by author'),
+      fresh_only: z.boolean().default(false).describe('Only return fresh entries'),
+      limit: z.number().default(20).describe('Maximum number of entries'),
+    },
+    async ({ type, tag, author, fresh_only, limit }) => {
+      try {
+        let entries: Entry[];
+
+        if (author) {
+          entries = getEntriesByAuthor(context.db, author);
+        } else {
+          entries = getAllEntries(context.db);
+        }
+
+        // Exclude archived
+        entries = entries.filter((e) => e.status !== 'archived');
+
+        if (type) {
+          entries = entries.filter((e) => e.type === type);
+        }
+
+        if (tag) {
+          const lowerTag = tag.toLowerCase();
+          entries = entries.filter((e) => e.tags.some((t) => t.toLowerCase() === lowerTag));
+        }
+
+        // Apply freshness filter
+        if (fresh_only) {
+          const usageStats = buildUsageStatsMap(context.config.local, '30d');
+          entries = entries.filter((e) => {
+            const f = computeFreshness(e, usageStats.get(e.id));
+            return f.label === 'fresh';
+          });
+        }
+
+        entries = entries.slice(0, limit);
+
+        // Build response with freshness info
+        const usageStats = buildUsageStatsMap(context.config.local, '30d');
+        const items = entries.map((e) => {
+          const f = computeFreshness(e, usageStats.get(e.id));
+          return {
+            id: e.id,
+            title: e.title,
+            type: e.type,
+            author: e.author,
+            tags: e.tags,
+            freshness: f.label,
+          };
+        });
+
+        const text = items.length === 0
+          ? 'No entries found.'
+          : items.map((i) => `${i.id} — ${i.title} (${i.type}, ${i.freshness})`).join('\n');
+
+        return {
+          content: [{ type: 'text' as const, text: `Found ${items.length} entries:\n\n${text}` }],
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: 'text' as const, text: `❌ Failed to list entries: ${message}` }],
+          isError: true,
+        };
+      }
+    },
+  );
+}
+
+// --- explore_topic ---
+
+function registerExploreTopic(server: McpServer, context: BrainMcpContext): void {
+  server.tool(
+    'explore_topic',
+    {
+      topic: z.string().describe('Topic to explore — finds related entries via search + knowledge trail'),
+      limit: z.number().default(5).describe('Maximum number of entries to return'),
+    },
+    async ({ topic, limit }) => {
+      try {
+        const trail = getTrailEntries(context.db, topic, limit);
+
+        if (trail.length === 0) {
+          return {
+            content: [{ type: 'text' as const, text: `No entries found for topic "${topic}".` }],
+          };
+        }
+
+        const parts = trail.map((t) => {
+          const related = t.related.length > 0
+            ? `\n  Related: ${t.related.map((r) => `${r.id} (${r.title})`).join(', ')}`
+            : '';
+          return `**${t.entry.title}** (${t.entry.type})\n  ID: ${t.entry.id} | Tags: ${t.entry.tags.join(', ') || 'none'}${related}`;
+        });
+
+        return {
+          content: [{ type: 'text' as const, text: `Knowledge trail for "${topic}" (${trail.length} entries):\n\n${parts.join('\n\n')}` }],
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: 'text' as const, text: `❌ Failed to explore topic: ${message}` }],
+          isError: true,
+        };
+      }
+    },
+  );
 }
