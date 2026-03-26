@@ -7,11 +7,17 @@ A CLI for sharing knowledge across a dev team. Entries are markdown in a git rep
 ## Install
 
 ```
-git clone https://github.com/vraspar/brain.git
-cd brain && npm install && npm run build && npm link
+npm install -g @vraspar/brain@alpha
 ```
 
 Requires Node.js 20+ and git.
+
+### Development setup
+
+```
+git clone https://github.com/vraspar/brain.git
+cd brain && npm install && npm run build && npm link
+```
 
 ## Usage
 

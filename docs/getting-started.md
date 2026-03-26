@@ -10,14 +10,12 @@ This guide walks through installing Brain CLI, creating or joining a brain, and 
 ## Install
 
 ```bash
-git clone https://github.com/vraspar/brain.git
-cd brain
-npm install
-npm run build
-npm link
+npm install -g @vraspar/brain@alpha
 ```
 
-After `npm link`, the `brain` command is available globally.
+After install, the `brain` command is available globally.
+
+For development, clone the repo instead: see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Option A: Create a new brain
 
