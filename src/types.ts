@@ -39,6 +39,7 @@ export interface BrainConfig {
   hubName?: string; // human-readable brain name
   lastSync?: string; // ISO 8601
   lastDigest?: string; // ISO 8601
+  obsidian?: boolean;
 }
 
 export interface DigestEntry extends Entry {

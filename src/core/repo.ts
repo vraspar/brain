@@ -24,6 +24,9 @@ const HUB_GITIGNORE = `# Brain local cache
 # OS files
 .DS_Store
 Thumbs.db
+
+# Obsidian workspace (local only)
+.obsidian/
 `;
 
 function generateHubReadme(name: string, remoteUrl?: string): string {
