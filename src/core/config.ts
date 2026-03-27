@@ -95,7 +95,7 @@ function parseYaml(content: string): BrainConfig {
     hubName: result['hubName'],
     lastSync: result['lastSync'],
     lastDigest: result['lastDigest'],
-    obsidian: result['obsidian'] === 'true',
+    obsidian: result['obsidian'] !== 'false',
   };
 }
 
