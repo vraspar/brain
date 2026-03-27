@@ -1,17 +1,7 @@
-/**
- * Shared set of known tech terms for auto-tag extraction.
- * Used by push and ingest to detect technology keywords in content.
- */
-export const KNOWN_TECH_TERMS = new Set([
-  'typescript', 'javascript', 'python', 'react', 'node', 'docker',
-  'kubernetes', 'k8s', 'aws', 'azure', 'gcp', 'terraform', 'ci/cd',
-  'cicd', 'git', 'api', 'rest', 'graphql', 'sql', 'nosql', 'redis',
-  'postgres', 'mongodb', 'nginx', 'linux', 'bash', 'helm', 'jenkins',
-  'github', 'gitlab', 'vscode', 'eslint', 'prettier', 'vitest', 'jest',
-  'webpack', 'vite', 'nextjs', 'express', 'fastify', 'rust', 'go',
-  'java', 'csharp', 'dotnet', 'angular', 'vue', 'svelte', 'tailwind',
-  'css', 'html', 'npm', 'yarn', 'pnpm', 'deno', 'bun',
-]);
+import { KNOWN_TECH_TERMS } from './constants.js';
+
+// Re-export for backward compatibility
+export { KNOWN_TECH_TERMS } from './constants.js';
 
 /**
  * Extract technology tags from content by matching against KNOWN_TECH_TERMS.

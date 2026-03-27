@@ -14,7 +14,7 @@ import {
 } from '../core/index-db.js';
 import { scanEntries } from '../core/entry.js';
 import { commitAndPush } from '../utils/git.js';
-import { buildUsageStatsMap } from '../core/freshness-stats.js';
+import { buildUsageStatsMap } from '../core/freshness.js';
 import { freshnessIndicator } from '../core/freshness.js';
 import Table from 'cli-table3';
 

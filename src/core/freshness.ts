@@ -1,15 +1,9 @@
 import type { Entry, FreshnessLabel, FreshnessScore } from '../types.js';
+import { getBulkEntryStats } from './receipts.js';
+import { VOLATILE_TAGS, STABLE_TAGS } from '../utils/constants.js';
 
 const HALF_LIFE_DAYS = 60;
 const LN2 = 0.693;
-
-const VOLATILE_TAGS = new Set([
-  'api', 'docker', 'kubernetes', 'cicd', 'deployment', 'config',
-]);
-
-const STABLE_TAGS = new Set([
-  'architecture', 'design', 'principles', 'patterns', 'conventions',
-]);
 
 /**
  * Exponential decay based on days since last update.
@@ -114,4 +108,27 @@ export function freshnessIndicator(label: FreshnessLabel): string {
     case 'aging': return '🟡 Aging';
     case 'stale': return '🔴 Stale';
   }
+}
+
+/**
+ * Build a UsageStats map for all entries by scanning receipts.
+ * Bridges the receipts system and the freshness scoring engine.
+ */
+export function buildUsageStatsMap(
+  repoPath: string,
+  period: string,
+): Map<string, UsageStats> {
+  const bulkStats = getBulkEntryStats(repoPath, period);
+  const result = new Map<string, UsageStats>();
+
+  for (const [entryId, stats] of bulkStats.entries()) {
+    result.set(entryId, {
+      accessCount30d: stats.accessCount,
+      // We don't track exact lastReadDaysAgo from receipts currently,
+      // so approximate: if there are reads in the period, assume recent
+      lastReadDaysAgo: stats.accessCount > 0 ? 0 : null,
+    });
+  }
+
+  return result;
 }

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { cloneForIngest, cloneRepo, getBatchFileModifiedDates, validateUrl } from '../utils/git.js';
 import { extractTags } from '../utils/tags.js';
+import { META_FILES, EXCLUDED_DIRS, BRAIN_ONLY_EXCLUDED_DIRS } from '../utils/constants.js';
 import {
   createEntry,
   extractTitle,
@@ -30,22 +31,6 @@ export interface IngestOptions {
   shallow?: boolean;
   onProgress?: (message: string) => void;
 }
-
-const META_FILES = new Set([
-  'readme.md', 'changelog.md', 'changes.md', 'license.md', 'licence.md',
-  'contributing.md', 'code_of_conduct.md', 'security.md',
-  'pull_request_template.md', 'issue_template.md',
-]);
-
-const EXCLUDED_DIRS = new Set([
-  'node_modules', '.git', '.github', '.vscode', 'dist', 'build',
-  'coverage', '__pycache__', '.tox', 'vendor', 'target',
-]);
-
-// Additional dirs excluded only when scanning the brain's own repo
-const BRAIN_ONLY_EXCLUDED_DIRS = new Set([
-  'docs', '_archive',
-]);
 
 /**
  * Determine if a relative path should be included for ingest.

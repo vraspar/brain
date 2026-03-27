@@ -12,7 +12,7 @@ import {
 } from '../src/core/index-db.js';
 import { saveConfig } from '../src/core/config.js';
 import { recordReceipt } from '../src/core/receipts.js';
-import { buildUsageStatsMap } from '../src/core/freshness-stats.js';
+import { buildUsageStatsMap } from '../src/core/freshness.js';
 import type { BrainConfig, Entry } from '../src/types.js';
 import type Database from 'better-sqlite3';
 
