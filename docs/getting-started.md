@@ -231,6 +231,18 @@ See entry counts, freshness distribution, and sync state:
 brain status
 ```
 
+## Using with Obsidian
+
+Brain repos are plain markdown in directories — they double as Obsidian vaults.
+
+```bash
+brain init --name "My Brain" --obsidian
+```
+
+This creates the repo at `~/brain` instead of `~/.brain/repo`, making it visible in Obsidian's vault picker. Open `~/brain` as a vault in Obsidian to browse and edit entries with a visual editor alongside the CLI.
+
+Entries in `guides/` and `skills/` are standard markdown with YAML frontmatter — Obsidian renders them natively. After editing in Obsidian, run `brain sync` to commit and push changes.
+
 ## Next steps
 
 - [Full CLI reference](commands.md) — all commands, flags, and edge cases
