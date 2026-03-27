@@ -465,7 +465,7 @@ describe('importCandidates', () => {
     }
   });
 
-  it('sets status to stale for stale freshness', async () => {
+  it('imports all entries as active regardless of source freshness', async () => {
     const db = createIndex(dbPath);
     try {
       const candidates: IngestCandidate[] = [
@@ -475,6 +475,7 @@ describe('importCandidates', () => {
           tags: [],
           content: 'Very old content.',
           freshness: 'stale',
+          sourceUpdated: '2024-01-01T00:00:00Z',
         },
       ];
 
@@ -486,7 +487,8 @@ describe('importCandidates', () => {
       const entries = await scanEntries(repoDir);
       const imported = entries.find(e => e.title === 'Old Migration Guide');
       expect(imported).toBeDefined();
-      expect(imported!.status).toBe('stale');
+      expect(imported!.status).toBe('active');
+      expect(imported!.source_last_modified).toBe('2024-01-01T00:00:00Z');
     } finally {
       db.close();
     }

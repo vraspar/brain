@@ -15,6 +15,7 @@ export interface EntryFrontmatter {
   source_repo?: string;
   source_path?: string;
   source_content_hash?: string;
+  source_last_modified?: string; // ISO 8601, original git date from source repo
   archived_at?: string; // ISO 8601
   archived_reason?: string;
 }

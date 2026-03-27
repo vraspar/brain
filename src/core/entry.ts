@@ -57,6 +57,7 @@ export function parseEntry(filePath: string, content: string): Entry {
     source_repo: data['source_repo'] ? String(data['source_repo']) : undefined,
     source_path: data['source_path'] ? String(data['source_path']) : undefined,
     source_content_hash: data['source_content_hash'] ? String(data['source_content_hash']) : undefined,
+    source_last_modified: data['source_last_modified'] ? String(data['source_last_modified']) : undefined,
   };
 }
 
@@ -85,6 +86,7 @@ export function serializeEntry(entry: Omit<Entry, 'id' | 'filePath'>): string {
   if (entry.source_repo) frontmatter['source_repo'] = entry.source_repo;
   if (entry.source_path) frontmatter['source_path'] = entry.source_path;
   if (entry.source_content_hash) frontmatter['source_content_hash'] = entry.source_content_hash;
+  if (entry.source_last_modified) frontmatter['source_last_modified'] = entry.source_last_modified;
 
   return matter.stringify(entry.content, frontmatter);
 }

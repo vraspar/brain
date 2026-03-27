@@ -300,9 +300,6 @@ export async function importCandidates(
       continue;
     }
 
-    // Determine entry status based on freshness
-    const status = candidate.freshness === 'stale' ? 'stale' as const : 'active' as const;
-
     // Build tags
     const tags = [...candidate.tags];
     if (options.sourceTag) {
@@ -312,6 +309,7 @@ export async function importCandidates(
       }
     }
 
+    // Ingested entries are new to this brain — always active, use ingest date
     const entry: Entry = createEntry({
       title: candidate.title,
       type: options.type ?? 'guide',
@@ -322,21 +320,20 @@ export async function importCandidates(
 
     const dirName = (options.type ?? 'guide') === 'skill' ? 'skills' : 'guides';
 
-    // Override status, ID (for collision handling), and source metadata
+    // Override ID (for collision handling) and add source metadata
     const entryWithMeta: Entry = {
       ...entry,
       id: slug,
       filePath: `${dirName}/${slug}.md`,
-      status,
+      status: 'active',
       source_repo: repoName,
       source_path: candidate.sourcePath,
       source_content_hash: crypto.createHash('sha256').update(candidate.content).digest('hex'),
+      source_last_modified: candidate.sourceUpdated,
     };
 
-    // Set dates from source if available
-    if (candidate.sourceUpdated) {
-      entryWithMeta.updated = candidate.sourceUpdated;
-    }
+    // created/updated use ingest date (from createEntry) — entry is new to this brain
+    // source_last_modified preserves the original git date for reference
 
     await writeEntry(brainRepoPath, entryWithMeta);
     existingIds.add(entryWithMeta.id);
