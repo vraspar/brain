@@ -14,7 +14,7 @@ import {
 import { createEntry, scanEntries, writeEntry } from '../src/core/entry.js';
 import { getEntryStats, getStats, recordReceipt } from '../src/core/receipts.js';
 import { computeFreshness } from '../src/core/freshness.js';
-import { buildUsageStatsMap } from '../src/core/freshness-stats.js';
+import { buildUsageStatsMap } from '../src/core/freshness.js';
 import { extractTags } from '../src/utils/tags.js';
 import { parseTimeWindow } from '../src/utils/time.js';
 import { registerTools } from '../src/mcp/tools.js';

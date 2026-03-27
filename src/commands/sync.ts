@@ -4,7 +4,7 @@ import { loadConfig } from '../core/config.js';
 import { syncBrain } from '../core/repo.js';
 import { scanEntries } from '../core/entry.js';
 import { createIndex, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
-import { buildUsageStatsMap } from '../core/freshness-stats.js';
+import { buildUsageStatsMap } from '../core/freshness.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
 
 export const syncCommand = new Command('sync')

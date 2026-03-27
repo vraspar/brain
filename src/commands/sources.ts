@@ -6,7 +6,7 @@ import { loadSources, removeSource } from '../core/sources.js';
 import { syncSource } from '../core/source-sync.js';
 import { createIndex, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
 import { scanEntries } from '../core/entry.js';
-import { buildUsageStatsMap } from '../core/freshness-stats.js';
+import { buildUsageStatsMap } from '../core/freshness.js';
 
 export const sourcesCommand = new Command('sources')
   .description('Manage external source repositories')

@@ -7,7 +7,7 @@ import { createIndex, rebuildIndex, getDbPath, updateFreshnessScores } from '../
 import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
 import { upsertSource } from '../core/sources.js';
-import { buildUsageStatsMap } from '../core/freshness-stats.js';
+import { buildUsageStatsMap } from '../core/freshness.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
 import type { EntryType, IngestCandidate } from '../types.js';
 

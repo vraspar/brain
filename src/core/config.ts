@@ -11,7 +11,7 @@ export function getBrainDir(): string {
   return path.join(os.homedir(), BRAIN_DIR_NAME);
 }
 
-export function ensureBrainDir(): void {
+function ensureBrainDir(): void {
   const brainDir = getBrainDir();
   if (!fs.existsSync(brainDir)) {
     fs.mkdirSync(brainDir, { recursive: true });

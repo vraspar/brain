@@ -15,7 +15,7 @@ import {
   searchEntries,
 } from '../core/index-db.js';
 import { computeFreshness } from '../core/freshness.js';
-import { buildUsageStatsMap } from '../core/freshness-stats.js';
+import { buildUsageStatsMap } from '../core/freshness.js';
 import { getStats, recordReceipt } from '../core/receipts.js';
 import { getTrailEntries } from '../core/links.js';
 import { commitAndPush } from '../utils/git.js';

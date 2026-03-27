@@ -76,7 +76,7 @@ export function ensureObsidianConfig(repoPath: string): void {
   }
 }
 
-export function removeObsidianLinks(repoPath: string): void {
+function removeObsidianLinks(repoPath: string): void {
   for (const dirName of ['guides', 'skills']) {
     const dirPath = path.join(repoPath, dirName);
     if (!fs.existsSync(dirPath)) continue;
