@@ -24,10 +24,12 @@ export const initCommand = new Command('init')
   .option('--name <name>', 'Brain name (used in README)')
   .option('--remote <url>', 'GitHub remote URL to push to')
   .option('--author <name>', 'Override git user.name')
+  .option('--obsidian', 'Enable Obsidian compatibility')
   .action(async (options: {
     name?: string;
     remote?: string;
     author?: string;
+    obsidian?: boolean;
   }) => {
     const format = initCommand.parent?.opts().format ?? 'text';
 
@@ -73,6 +75,13 @@ export const initCommand = new Command('init')
         rebuildIndex(db, entries);
       } finally {
         db.close();
+      }
+
+      if (options.obsidian) {
+        const { ensureObsidianConfig } = await import('../core/obsidian.js');
+        ensureObsidianConfig(config.local);
+        const { saveConfig } = await import('../core/config.js');
+        saveConfig({ ...config, obsidian: true });
       }
 
       if (format === 'json') {

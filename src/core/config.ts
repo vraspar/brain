@@ -50,6 +50,9 @@ function serializeYaml(config: BrainConfig): string {
   if (config.lastDigest) {
     lines.push(`lastDigest: "${escapeYamlValue(config.lastDigest)}"`);
   }
+  if (config.obsidian) {
+    lines.push(`obsidian: ${config.obsidian}`);
+  }
   return lines.join('\n') + '\n';
 }
 
@@ -92,6 +95,7 @@ function parseYaml(content: string): BrainConfig {
     hubName: result['hubName'],
     lastSync: result['lastSync'],
     lastDigest: result['lastDigest'],
+    obsidian: result['obsidian'] === 'true',
   };
 }
 
