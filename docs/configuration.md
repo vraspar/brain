@@ -42,9 +42,6 @@ lastSync: "2026-03-23T12:00:00.000Z"
 # ISO 8601 timestamp of last brain digest. Updated by brain digest.
 # Used as the default --since window on the next digest run.
 lastDigest: "2026-03-23T12:00:00.000Z"
-
-# Enable Obsidian compatibility. Creates .obsidian/ config and wikilink footers.
-obsidian: false
 ```
 
 ### Field reference
@@ -55,7 +52,6 @@ obsidian: false
 | `local` | Yes | string | `init`, `connect` | Absolute path to the local repo. |
 | `author` | Yes | string | `init`, `connect` | Author identity for entries and receipts. |
 | `hubName` | No | string | `init`, `connect` | Human-readable brain name. |
-| `obsidian` | No | boolean | `init --obsidian` | Obsidian compatibility. Creates `.obsidian/` config and wikilink footers. |
 | `lastSync` | No | string | `sync`, `init`, `connect` | ISO 8601 timestamp. |
 | `lastDigest` | No | string | `digest` | ISO 8601 timestamp. |
 

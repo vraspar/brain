@@ -58,7 +58,7 @@ All commands support `--format json`. Run `brain <command> --help` for flags.
 - **MCP server** — 10 tools + 2 resources, works with Claude, Copilot, Cursor, Windsurf
 - **Read analytics** — per-entry read tracking across CLI and MCP
 - **Auto-detection** — title, type, and tags inferred from content on push
-- **Obsidian compatible** — `brain init --obsidian` creates `.obsidian/` config and adds wikilink footers to entries
+- **Obsidian compatible** — every brain is an Obsidian vault with `.obsidian/` config and wikilink footers
 
 ## MCP setup
 
