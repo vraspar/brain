@@ -233,15 +233,9 @@ brain status
 
 ## Using with Obsidian
 
-Brain repos are plain markdown in directories — they double as Obsidian vaults.
+Every brain is an Obsidian vault. Open `~/.brain/repo` in Obsidian to browse entries with graph view and backlinks.
 
-```bash
-brain init --name "My Brain" --obsidian
-```
-
-This creates `.obsidian/` config in the repo so it's recognized as an Obsidian vault. Open `~/.brain/repo` (or wherever your brain lives) as a vault in Obsidian to browse and edit entries with a visual editor alongside the CLI.
-
-Entries in `guides/` and `skills/` are standard markdown with YAML frontmatter — Obsidian renders them natively. After editing in Obsidian, run `brain sync` to commit and push changes.
+Entries in `guides/` and `skills/` are standard markdown with YAML frontmatter — Obsidian renders them natively. Wikilink footers connect related entries. After editing in Obsidian, run `brain sync` to commit and push changes.
 
 ## Next steps
 

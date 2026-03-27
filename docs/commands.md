@@ -16,7 +16,7 @@ All commands support these global options:
 Create a new brain hub. Initializes a git repository with the standard directory structure (`guides/`, `skills/`, `_analytics/receipts/`), generates a README, and creates `~/.brain/config.yaml`.
 
 ```
-brain init [--name <name>] [--remote <url>] [--author <name>] [--obsidian]
+brain init [--name <name>] [--remote <url>] [--author <name>]
 ```
 
 | Flag | Required | Description |
@@ -24,7 +24,6 @@ brain init [--name <name>] [--remote <url>] [--author <name>] [--obsidian]
 | `--name <name>` | In JSON mode | Brain name. Used in the generated README. If omitted in text mode, triggers interactive prompts. |
 | `--remote <url>` | No | Git remote URL. If provided, adds as `origin` and pushes the initial commit. |
 | `--author <name>` | No | Override the author identity. Default: `git config user.name`. |
-| `--obsidian` | No | Enable Obsidian compatibility. Creates `.obsidian/` config in the repo and enables wikilink footers in entries. |
 
 ### Behavior
 
@@ -51,9 +50,6 @@ brain init
 
 # JSON output (for scripts)
 brain init --name "CI Brain" --format json
-
-# Obsidian-compatible (adds .obsidian/ and wikilinks)
-brain init --name "My Brain" --obsidian
 ```
 
 JSON output:
