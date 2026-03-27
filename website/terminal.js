@@ -19,13 +19,13 @@
       command: 'brain search "kubernetes"',
       output:
         'Found 3 results:\n' +
-        '+------------------------+--------+-------+-----------+\n' +
-        '| Title                  | Author | Type  | Tags      |\n' +
-        '+------------------------+--------+-------+-----------+\n' +
-        '| K8s Deployment Guide   | bob    | guide | k8s       |\n' +
-        '| CI Pipeline            | carol  | guide | ci, k8s   |\n' +
-        '| Helm Chart Patterns    | alice  | skill | helm, k8s |\n' +
-        '+------------------------+--------+-------+-----------+',
+        '┌────────────────────────┬────────┬───────┬───────────┐\n' +
+        '│ Title                  │ Author │ Type  │ Tags      │\n' +
+        '├────────────────────────┼────────┼───────┼───────────┤\n' +
+        '│ K8s Deployment Guide   │ bob    │ guide │ k8s       │\n' +
+        '│ CI Pipeline            │ carol  │ guide │ ci, k8s   │\n' +
+        '│ Helm Chart Patterns    │ alice  │ skill │ helm, k8s │\n' +
+        '└────────────────────────┴────────┴───────┴───────────┘',
       pauseAfter: 2500,
     },
     {
@@ -69,7 +69,7 @@
       html +=
         '<div><span class="prompt">$ </span><span class="command">' +
         escapeHtml(step.command) +
-        '</span></div><div class="output">' +
+        '</span></div><div class="output" style="white-space:pre">' +
         escapeHtml(step.output) +
         '</div>';
       if (i < DEMO_SEQUENCE.length - 1) html += '<div>&nbsp;</div>';

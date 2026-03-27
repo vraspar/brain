@@ -56,47 +56,47 @@
 
       <div class="steps-grid">
         <div>
-          <div class="step-label">1. Create</div>
-          <div class="terminal" aria-label="Terminal showing brain init command">
-            <div><span class="prompt">$ </span><span class="command">brain init --name "My Team"</span></div>
+          <div class="step-label">1. Start</div>
+          <div class="terminal" aria-label="Terminal showing brain init and connect commands">
+            <div><span class="comment"># First person creates a brain</span></div>
+            <div><span class="prompt">$ </span><span class="command">brain init --name "Acme Engineering"</span></div>
             <div class="output" style="white-space:pre">
-✅ Brain "My Team" is ready!</div>
+✅ Brain "Acme Engineering" is ready!</div>
+            <div>&nbsp;</div>
+            <div><span class="comment"># Teammates join it</span></div>
+            <div><span class="prompt">$ </span><span class="command">brain connect https://github.com/acme/brain-hub.git</span></div>
           </div>
         </div>
 
         <div>
-          <div class="step-label">2. Import</div>
-          <div class="terminal" aria-label="Terminal showing brain ingest command">
-            <div><span class="prompt">$ </span><span class="command">brain ingest https://github.com/acme/docs.git</span></div>
-            <div class="output" style="white-space:pre">
-✅ Ingested 24 entries from acme/docs
-   💡 8% stale. Run 'brain prune --dry-run' to review.</div>
-          </div>
-        </div>
-
-        <div>
-          <div class="step-label">3. Share</div>
-          <div class="terminal" aria-label="Terminal showing brain push command">
+          <div class="step-label">2. Add knowledge</div>
+          <div class="terminal" aria-label="Terminal showing brain push and ingest commands">
+            <div><span class="comment"># Push a single guide</span></div>
             <div><span class="prompt">$ </span><span class="command">brain push ./guide.md</span></div>
             <div class="output" style="white-space:pre">
 ✅ Pushed: Docker Multi-Stage Builds
    Tags: docker (auto-detected)</div>
+            <div>&nbsp;</div>
+            <div><span class="comment"># Or import docs from a repo</span></div>
+            <div><span class="prompt">$ </span><span class="command">brain ingest https://github.com/acme/docs.git</span></div>
+            <div class="output" style="white-space:pre">
+✅ Ingested 24 entries from acme/docs</div>
           </div>
         </div>
 
         <div class="step-full">
-          <div class="step-label">4. Discover</div>
+          <div class="step-label">3. Discover</div>
           <div class="terminal" aria-label="Terminal showing brain search command">
             <div><span class="prompt">$ </span><span class="command">brain search "kubernetes"</span></div>
             <div class="output" style="white-space:pre">
 Found 3 results:
-+------------------------+--------+-------+-----------+
-| Title                  | Author | Type  | Tags      |
-+------------------------+--------+-------+-----------+
-| K8s Deployment Guide   | bob    | guide | k8s       |
-| CI Pipeline            | carol  | guide | ci, k8s   |
-| Helm Chart Patterns    | alice  | skill | helm, k8s |
-+------------------------+--------+-------+-----------+</div>
+┌────────────────────────┬────────┬───────┬───────────┐
+│ Title                  │ Author │ Type  │ Tags      │
+├────────────────────────┼────────┼───────┼───────────┤
+│ K8s Deployment Guide   │ bob    │ guide │ k8s       │
+│ CI Pipeline            │ carol  │ guide │ ci, k8s   │
+│ Helm Chart Patterns    │ alice  │ skill │ helm, k8s │
+└────────────────────────┴────────┴───────┴───────────┘</div>
           </div>
         </div>
       </div>
@@ -115,39 +115,18 @@ Found 3 results:
         </div>
         <div class="card">
           <h3>FTS5 search</h3>
-          <p>SQLite FTS5 with BM25 ranking, prefix matching, and contextual snippets. Sub-millisecond search. Works offline.</p>
+          <p>SQLite FTS5 with BM25 ranking, prefix matching, and contextual snippets. Sub-millisecond queries. Works offline. Index rebuilt from source on every sync.</p>
         </div>
         <div class="card">
-          <h3>MCP server</h3>
-          <p>10 tools and 2 resources exposed via Model Context Protocol. AI agents can search, read, edit, and publish entries. <code>brain serve</code> starts the server.</p>
-        </div>
-        <div class="card">
-          <h3>Repo ingest</h3>
-          <p>Seed your brain from existing repos. <code>brain ingest &lt;url&gt;</code> scans for markdown, auto-detects titles and tags, and scores freshness at import.</p>
-        </div>
-        <div class="card">
-          <h3>Freshness scoring</h3>
-          <p>Entries scored as Fresh, Aging, or Stale based on recency and read frequency. <code>brain prune</code> archives what's stale. <code>brain restore</code> brings it back.</p>
-        </div>
-        <div class="card">
-          <h3>Knowledge trails</h3>
-          <p>Auto-computed links between entries. <code>brain trail &lt;topic&gt;</code> follows connections across your team's knowledge.</p>
-        </div>
-        <div class="card">
-          <h3>Interactive search</h3>
-          <p>Search results are numbered. Pick one to read it inline. <code>brain search "kubernetes"</code> then select. Records a read receipt.</p>
-        </div>
-        <div class="card">
-          <h3>Works with Obsidian</h3>
-          <p>Every brain is an Obsidian vault. Open it for graph view, backlinks, and visual editing. Wikilink footers connect related entries.</p>
-        </div>
-        <div class="card">
-          <h3>21 commands</h3>
-          <p>push, search, list, show, digest, edit, open, ingest, prune, restore, trail, status, and more. All support <code>--format json</code>.</p>
+          <h3>MCP-native</h3>
+          <p>10 tools and 2 resources via Model Context Protocol. Your AI agent can search, read, edit, and publish entries. <code>brain serve</code> starts the server.</p>
         </div>
       </div>
 
+      <p class="section-also">Also: repo ingest · freshness scoring · knowledge trails · Obsidian vault · 20 commands</p>
+
       <p class="section-punch">
+        <strong>Zero infrastructure. One command to start.</strong><br>
         <code>brain connect https://github.com/acme/brain-hub.git</code>
       </p>
     </div>
@@ -205,26 +184,21 @@ Found 3 results:
     <div class="container">
       <h2>Under the hood</h2>
 
-      <div class="arch-diagram" aria-label="Architecture diagram">
-        <div class="arch-label">brain push / brain search / brain digest</div>
-        <div class="arch-arrow-down"></div>
-        <div class="arch-box arch-box--accent">CLI</div>
-        <div class="arch-arrow-down"></div>
-        <div class="arch-row">
-          <div class="arch-box">
-            <span class="arch-accent">Git repo</span>
-            <span class="arch-sub">storage</span>
-          </div>
-          <div class="arch-box">
-            <span class="arch-accent">SQLite FTS5</span>
-            <span class="arch-sub">search</span>
-          </div>
-          <div class="arch-box">
-            <span class="arch-accent">Receipts</span>
-            <span class="arch-sub">analytics</span>
-          </div>
-        </div>
-      </div>
+<pre class="arch-pre" aria-label="Architecture diagram">
+       brain push / brain search / brain digest
+                        │
+                 ┌──────▼──────┐
+                 │     <span class="arch-accent">CLI</span>     │
+                 └──────┬──────┘
+                        │
+       ┌────────────────┼────────────────┐
+       ▼                ▼                ▼
+  ┌──────────┐   ┌────────────┐   ┌──────────┐
+  │ <span class="arch-accent">Git repo</span> │   │ <span class="arch-accent">SQLite</span>    │   │ <span class="arch-accent">Receipts</span> │
+  │ (storage)│   │ <span class="arch-accent">FTS5</span>      │   │ (analytics│
+  │          │   │ (search)   │   │          │
+  └──────────┘   └────────────┘   └──────────┘
+</pre>
 
       <div class="arch-notes">
         <div class="arch-note">
@@ -248,10 +222,11 @@ Found 3 results:
 <!-- Footer -->
 <footer class="site-footer">
   <div class="container">
-    <div>brain v0.4.1 · MIT License</div>
+    <div>brain v0.1.0-alpha · MIT License</div>
     <div class="footer-links">
       <a href="https://github.com/vraspar/brain">GitHub ↗</a>
       <a href="https://github.com/vraspar/brain/tree/main/docs">Docs ↗</a>
+      <a href="https://github.com/vraspar/brain/blob/main/ROADMAP.md">Roadmap ↗</a>
     </div>
   </div>
 </footer>
