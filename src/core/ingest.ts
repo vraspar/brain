@@ -275,21 +275,44 @@ export async function importCandidates(
       continue;
     }
 
-    // Generate slug and check for pre-existing entries in the brain
+    // Generate slug from source path for uniqueness.
+    // Include repo name + parent dir + filename to avoid collisions.
+    // Example: onnxruntime-genai/cmake/external/opencv/README.md → onnxruntime-genai-opencv-readme
     let slug: string;
     try {
-      const baseSlug = generateEntryId(candidate.title);
+      const pathParts = candidate.sourcePath.replace(/\\/g, '/').split('/');
+      const filename = pathParts[pathParts.length - 1].replace(/\.md$/i, '');
+      const parentDir = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
 
-      // If the base slug exists in the DB (not just in this batch),
-      // skip unless --overwrite is set
-      const preExisting = getEntryById(db, baseSlug);
-      if (preExisting && !options.overwrite) {
-        skipped.push({ path: candidate.sourcePath, reason: `duplicate slug "${baseSlug}"` });
-        continue;
+      // For generic filenames, include parent dir in slug
+      const genericNames = new Set(['readme', 'index', 'overview', 'introduction', 'getting-started']);
+      let slugBase: string;
+      if (genericNames.has(filename.toLowerCase()) && parentDir) {
+        // Include repo name prefix if source-tag is set
+        const repoPrefix = repoName ? `${repoName}-` : '';
+        slugBase = `${repoPrefix}${parentDir}-${filename}`;
+      } else {
+        slugBase = candidate.title;
       }
 
-      // Generate unique slug handling intra-batch collisions
-      slug = generateUniqueEntryId(candidate.title, existingIds);
+      const baseSlug = generateEntryId(slugBase);
+
+      // If slug collides with existing entry, append numeric suffix
+      if (existingIds.has(baseSlug)) {
+        if (!options.overwrite) {
+          let counter = 2;
+          let uniqueSlug = `${baseSlug}-${counter}`;
+          while (existingIds.has(uniqueSlug)) {
+            counter++;
+            uniqueSlug = `${baseSlug}-${counter}`;
+          }
+          slug = uniqueSlug;
+        } else {
+          slug = baseSlug;
+        }
+      } else {
+        slug = baseSlug;
+      }
     } catch {
       skipped.push({ path: candidate.sourcePath, reason: 'cannot generate slug from title' });
       continue;
