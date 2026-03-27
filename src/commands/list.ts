@@ -14,7 +14,6 @@ interface ListOptions {
   unread?: boolean;
   stale?: boolean;
   fresh?: boolean;
-  showId?: boolean;
 }
 
 export const listCommand = new Command('list')
@@ -26,7 +25,6 @@ export const listCommand = new Command('list')
   .option('--unread', 'Show only entries you have not read')
   .option('--stale', 'Show only stale entries (🔴)')
   .option('--fresh', 'Show only fresh entries (🟢)')
-  .option('--show-id', 'Show entry ID column')
   .action(async (options: ListOptions) => {
     const format = listCommand.parent?.opts().format ?? 'text';
 
@@ -115,7 +113,7 @@ export const listCommand = new Command('list')
         db.close();
       }
 
-      console.log(formatSearchResults(entries, { format, freshness: freshnessMap, showId: options.showId }));
+      console.log(formatSearchResults(entries, { format, freshness: freshnessMap }));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
