@@ -40,14 +40,19 @@ const META_FILES = new Set([
 const EXCLUDED_DIRS = new Set([
   'node_modules', '.git', '.github', '.vscode', 'dist', 'build',
   'coverage', '__pycache__', '.tox', 'vendor', 'target',
+]);
+
+// Additional dirs excluded only when scanning the brain's own repo
+const BRAIN_ONLY_EXCLUDED_DIRS = new Set([
   'docs', '_archive',
 ]);
 
 /**
  * Determine if a relative path should be included for ingest.
  * Excludes meta files, hidden dirs, and known non-doc directories.
+ * Set isBrainRepo=true when scanning the brain's own repo (excludes docs/, _archive/).
  */
-export function shouldIncludeFile(relativePath: string): boolean {
+export function shouldIncludeFile(relativePath: string, isBrainRepo = false): boolean {
   const filename = path.basename(relativePath).toLowerCase();
   const isRootLevel = !relativePath.includes('/') && !relativePath.includes('\\');
 
@@ -56,6 +61,7 @@ export function shouldIncludeFile(relativePath: string): boolean {
 
   const parts = relativePath.split(/[/\\]/);
   if (parts.some(p => EXCLUDED_DIRS.has(p))) return false;
+  if (isBrainRepo && parts.some(p => BRAIN_ONLY_EXCLUDED_DIRS.has(p))) return false;
   if (parts.some(p => p.startsWith('.'))) return false;
 
   return true;
@@ -145,7 +151,7 @@ export async function discoverCandidates(
   let files = scanMarkdownFiles(sourceDir);
 
   // Apply default exclusions
-  files = files.filter(shouldIncludeFile);
+  files = files.filter((f) => shouldIncludeFile(f));
 
   // Apply --path filter
   if (options.pathFilter) {
@@ -214,9 +220,22 @@ export async function discoverCandidates(
     }
 
     const parsed = parseInputContent(raw);
-    const title = parsed.title
+    const rawTitle = parsed.title
       ?? extractTitle(raw)
       ?? titleFromFilename(filePath);
+
+    // For generic filenames (readme, index, etc.), prefix with parent directory
+    // to avoid slug collisions: cmake/external/opencv/README.md → "opencv readme"
+    const genericNames = new Set(['readme', 'index', 'overview', 'introduction', 'getting-started']);
+    const baseTitle = titleFromFilename(filePath);
+    let title = rawTitle;
+    if (genericNames.has(baseTitle.toLowerCase())) {
+      const parts = filePath.replace(/\\/g, '/').split('/');
+      if (parts.length >= 2) {
+        const parentDir = parts[parts.length - 2].replace(/[-_]/g, ' ');
+        title = `${parentDir} ${baseTitle}`;
+      }
+    }
     const tags = parsed.tags ?? extractTags(raw);
     const content = parsed.content;
 

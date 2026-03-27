@@ -98,6 +98,16 @@ describe('shouldIncludeFile', () => {
     expect(shouldIncludeFile('readme.md')).toBe(false);
     expect(shouldIncludeFile('Readme.md')).toBe(false);
   });
+
+  it('includes docs/ files for external repos (default)', () => {
+    expect(shouldIncludeFile('docs/setup.md')).toBe(true);
+    expect(shouldIncludeFile('docs/guides/deploy.md')).toBe(true);
+  });
+
+  it('excludes docs/ and _archive/ for brain repo', () => {
+    expect(shouldIncludeFile('docs/setup.md', true)).toBe(false);
+    expect(shouldIncludeFile('_archive/old-guide.md', true)).toBe(false);
+  });
 });
 
 // --- matchGlob ---
