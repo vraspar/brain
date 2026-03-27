@@ -83,19 +83,14 @@ export function matchGlob(filePath: string, pattern: string): boolean {
 }
 
 /**
- * Compute freshness label based on how recently the file was modified.
+ * Compute freshness label for import preview.
+ * All ingested content is 'fresh' — it's new to this brain.
+ * The source file's age is stored as metadata for reference only.
  */
 export function computeImportFreshness(
-  sourceUpdated: Date | undefined,
+  _sourceUpdated: Date | undefined,
 ): 'fresh' | 'aging' | 'stale' {
-  if (!sourceUpdated) return 'aging';
-
-  const ageMs = Date.now() - sourceUpdated.getTime();
-  const ageDays = ageMs / (24 * 60 * 60 * 1000);
-
-  if (ageDays <= 30) return 'fresh';
-  if (ageDays <= 90) return 'aging';
-  return 'stale';
+  return 'fresh';
 }
 
 /**
@@ -333,9 +328,10 @@ export async function importCandidates(
       source_content_hash: crypto.createHash('sha256').update(candidate.content).digest('hex'),
     };
 
-    // Set dates from source if available
+    // Store source date as metadata but use ingest date for freshness
+    // All ingested content starts fresh — it's new to THIS brain
     if (candidate.sourceUpdated) {
-      entryWithMeta.updated = candidate.sourceUpdated;
+      Object.assign(entryWithMeta, { source_updated: candidate.sourceUpdated });
     }
 
     await writeEntry(brainRepoPath, entryWithMeta);
