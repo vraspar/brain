@@ -164,7 +164,7 @@ export function formatSearchResults(
 
   const showPreview = options.snippets && options.snippets.size > 0;
   const showFreshness = options.freshness && options.freshness.size > 0;
-  const showId = options.showId ?? false;
+  const showId = options.showId ?? true;
 
   const head: string[] = [];
   if (showId) head.push('ID');
