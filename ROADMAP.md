@@ -3,7 +3,7 @@
 ## Current (v0.3.0)
 
 - 21 CLI commands: `init`, `connect`, `push`, `digest`, `search`, `show`, `list`, `stats`, `retract`, `sync`, `serve`, `ingest`, `prune`, `restore`, `trail`, `edit`, `open`, `remote`, `sources`, `status`, plus `help`
-- Obsidian compatibility: `brain init --obsidian` creates repo at `~/brain`, usable as an Obsidian vault
+- Obsidian compatibility: `brain init --obsidian` creates `.obsidian/` config and enables wikilink footers
 - Repo ingest: `brain ingest` imports docs from remote repos or local directories with freshness scoring at import time
 - Freshness scoring: multiplicative formula (recency base, usage boost, volatility modifier) with Fresh/Aging/Stale labels
 - Knowledge pruning: `brain prune` archives stale entries to `_archive/`, reversible with `brain restore`
