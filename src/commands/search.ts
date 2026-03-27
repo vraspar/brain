@@ -49,7 +49,8 @@ export const searchCommand = new Command('search')
   .option('--limit <n>', 'Maximum results to return', '20')
   .option('--no-preview', 'Hide content preview snippets')
   .option('--no-interactive', 'Skip the selection prompt')
-  .action(async (query: string, options: { limit: string; preview: boolean; interactive: boolean }) => {
+  .option('--show-id', 'Show entry ID column')
+  .action(async (query: string, options: { limit: string; preview: boolean; interactive: boolean; showId?: boolean }) => {
     const format = searchCommand.parent?.opts().format ?? 'text';
 
     try {
@@ -69,7 +70,7 @@ export const searchCommand = new Command('search')
           ? new Map(results.map((r) => [r.entry.id, r.snippet]))
           : undefined;
 
-        console.log(formatSearchResults(entries, { format, snippets }));
+        console.log(formatSearchResults(entries, { format, snippets, showId: options.showId }));
 
         // Interactive selection (text mode only, TTY only)
         if (format !== 'json' && options.interactive && entries.length > 0) {

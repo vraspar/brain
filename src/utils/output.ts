@@ -9,10 +9,16 @@ export interface FormatOptions {
 }
 
 const MAX_TITLE_LENGTH = 40;
+const MAX_ID_LENGTH = 28;
 
 function truncateTitle(title: string, maxLength = MAX_TITLE_LENGTH): string {
   if (title.length <= maxLength) return title;
   return title.slice(0, maxLength - 3) + '...';
+}
+
+function truncateId(id: string, maxLength = MAX_ID_LENGTH): string {
+  if (id.length <= maxLength) return id;
+  return id.slice(0, maxLength - 2) + '..';
 }
 
 export function formatEntry(entry: Entry, options: FormatOptions = {}): string {
@@ -137,6 +143,7 @@ export function formatSearchResults(
   options: FormatOptions & {
     snippets?: Map<string, string>;
     freshness?: Map<string, FreshnessLabel>;
+    showId?: boolean;
   } = {},
 ): string {
   if (options.format === 'json') {
@@ -157,17 +164,20 @@ export function formatSearchResults(
 
   const showPreview = options.snippets && options.snippets.size > 0;
   const showFreshness = options.freshness && options.freshness.size > 0;
+  const showId = options.showId ?? false;
 
-  const head = showPreview
-    ? ['ID', 'Title', 'Author', 'Type', 'Tags', 'Preview']
-    : showFreshness
-      ? ['ID', 'Title', 'Author', 'Type', 'Freshness', 'Tags']
-      : ['ID', 'Title', 'Author', 'Type', 'Tags', 'Status'];
+  const head: string[] = [];
+  if (showId) head.push('ID');
+  head.push('Title', 'Author', 'Type');
+  if (showFreshness) head.push('Freshness');
+  head.push('Tags');
+  if (showPreview) head.push('Preview');
+  if (!showFreshness && !showPreview) head.push('Status');
 
   const table = new Table({
     head,
     style: { head: ['cyan'] },
-    ...(showPreview ? { colWidths: [null, null, null, null, 40] } : {}),
+    ...(showPreview ? { colWidths: [null, null, null, null, null, 40] } : {}),
   });
 
   for (const entry of entries) {
@@ -178,37 +188,29 @@ export function formatSearchResults(
           ? chalk.yellow
           : chalk.gray;
 
+    const row: string[] = [];
+    if (showId) row.push(chalk.dim(truncateId(entry.id)));
+    row.push(truncateTitle(entry.title));
+    row.push(entry.author);
+    row.push(entry.type);
+
+    if (showFreshness) {
+      const label = options.freshness!.get(entry.id);
+      row.push(label ? freshnessIndicator(label) : statusColor(entry.status));
+    }
+
+    row.push(entry.tags.slice(0, 3).join(', '));
+
     if (showPreview) {
       const snippet = options.snippets!.get(entry.id) ?? '';
-      const cleanSnippet = snippet.replace(/[«»]/g, '').slice(0, 60);
-      table.push([
-        chalk.dim(entry.id),
-        truncateTitle(entry.title),
-        entry.author,
-        entry.type,
-        entry.tags.slice(0, 3).join(', '),
-        chalk.dim(cleanSnippet),
-      ]);
-    } else if (showFreshness) {
-      const label = options.freshness!.get(entry.id);
-      table.push([
-        chalk.dim(entry.id),
-        truncateTitle(entry.title),
-        entry.author,
-        entry.type,
-        label ? freshnessIndicator(label) : statusColor(entry.status),
-        entry.tags.slice(0, 3).join(', '),
-      ]);
-    } else {
-      table.push([
-        chalk.dim(entry.id),
-        truncateTitle(entry.title),
-        entry.author,
-        entry.type,
-        entry.tags.slice(0, 3).join(', '),
-        statusColor(entry.status),
-      ]);
+      row.push(chalk.dim(snippet.replace(/[«»]/g, '').slice(0, 60)));
     }
+
+    if (!showFreshness && !showPreview) {
+      row.push(statusColor(entry.status));
+    }
+
+    table.push(row);
   }
 
   return `${chalk.bold(`Found ${entries.length} result${entries.length === 1 ? '' : 's'}:`)}\n${table.toString()}`;
