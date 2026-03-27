@@ -131,23 +131,12 @@ describe('matchGlob', () => {
 // --- computeImportFreshness ---
 
 describe('computeImportFreshness', () => {
-  it('returns fresh for recent dates', () => {
-    const recent = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+  it('always returns fresh — ingested content is new to this brain', () => {
+    const recent = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const old = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000);
     expect(computeImportFreshness(recent)).toBe('fresh');
-  });
-
-  it('returns aging for 30-90 day old dates', () => {
-    const aging = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days ago
-    expect(computeImportFreshness(aging)).toBe('aging');
-  });
-
-  it('returns stale for 90+ day old dates', () => {
-    const stale = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000); // 120 days ago
-    expect(computeImportFreshness(stale)).toBe('stale');
-  });
-
-  it('returns aging for undefined date (conservative default)', () => {
-    expect(computeImportFreshness(undefined)).toBe('aging');
+    expect(computeImportFreshness(old)).toBe('fresh');
+    expect(computeImportFreshness(undefined)).toBe('fresh');
   });
 });
 
@@ -393,7 +382,7 @@ describe('importCandidates', () => {
     }
   });
 
-  it('skips duplicates by default', async () => {
+  it('creates unique slug on collision instead of skipping', async () => {
     const db = createIndex(dbPath);
     try {
       // Pre-existing entry
@@ -422,9 +411,8 @@ describe('importCandidates', () => {
         author: 'testuser',
       });
 
-      expect(result.imported).toHaveLength(0);
-      expect(result.skipped).toHaveLength(1);
-      expect(result.skipped[0].reason).toContain('duplicate');
+      // Should import with a unique slug (not skip)
+      expect(result.imported).toHaveLength(1);
     } finally {
       db.close();
     }
