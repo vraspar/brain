@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { joinBrain } from '../core/repo.js';
 import { scanEntries } from '../core/entry.js';
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
+import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
 
 /**
  * Shared handler for both `brain connect` and `brain join`.
@@ -32,6 +33,7 @@ export async function handleConnect(
     const db = createIndex(getDbPath());
     try {
       rebuildIndex(db, entries);
+      maybeUpdateObsidianLinks(config, db);
     } finally {
       db.close();
     }
