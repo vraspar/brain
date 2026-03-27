@@ -15,6 +15,7 @@ import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
 import { extractTags } from '../utils/tags.js';
+import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
 import type { EntryType } from '../types.js';
 
 /**
@@ -238,6 +239,7 @@ export const pushCommand = new Command('push')
       const db = createIndex(getDbPath());
       try {
         rebuildIndex(db, entries);
+        maybeUpdateObsidianLinks(config, db);
       } finally {
         db.close();
       }

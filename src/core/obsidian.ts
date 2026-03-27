@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type Database from 'better-sqlite3';
 import matter from 'gray-matter';
+import type { BrainConfig } from '../types.js';
 import { getAllEntries } from './index-db.js';
 import { getRelatedEntries } from './links.js';
 
@@ -92,4 +93,17 @@ export function removeObsidianLinks(repoPath: string): void {
       fs.writeFileSync(fullPath, newRaw, 'utf-8');
     }
   }
+}
+
+/**
+ * Convenience: update Obsidian wikilinks if obsidian mode is enabled.
+ * Call after rebuildIndex in any command that modifies entries.
+ */
+export function maybeUpdateObsidianLinks(
+  config: BrainConfig,
+  db: Database.Database,
+): void {
+  if (!config.obsidian) return;
+  ensureObsidianConfig(config.local);
+  updateObsidianLinks(db, config.local);
 }
