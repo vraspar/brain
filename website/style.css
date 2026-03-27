@@ -350,6 +350,14 @@ a:focus-visible {
   margin-right: 0;
 }
 
+.section-also {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 auto 2rem;
+}
+
 .section-punch {
   text-align: center;
   color: var(--text-secondary);
@@ -416,73 +424,17 @@ a:focus-visible {
 }
 
 /* Architecture */
-.arch-diagram {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  max-width: 600px;
-  margin: 0 auto 2rem;
-}
-
-.arch-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-
-.arch-arrow-down {
-  width: 2px;
-  height: 24px;
-  background: var(--border);
-  position: relative;
-}
-
-.arch-arrow-down::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--border);
-}
-
-.arch-box {
+.arch-pre {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.75rem 1.25rem;
-  text-align: center;
-  background: var(--bg-secondary, #141414);
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  overflow-x: auto;
 }
 
-.arch-box--accent {
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.arch-box .arch-sub {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-.arch-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  width: 100%;
-  margin-top: 0.5rem;
-}
-
-.arch-accent {
+.arch-pre .arch-accent {
   color: var(--accent);
 }
 
@@ -577,12 +529,9 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .arch-row {
-    grid-template-columns: 1fr;
-  }
-
-  .arch-diagram {
-    padding: 0 1rem;
+  .arch-pre {
+    font-size: 0.7rem;
+    overflow-x: auto;
   }
 
   .terminal {
