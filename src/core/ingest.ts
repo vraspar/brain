@@ -83,19 +83,14 @@ export function matchGlob(filePath: string, pattern: string): boolean {
 }
 
 /**
- * Compute freshness label based on how recently the file was modified.
+ * Compute freshness label for import preview.
+ * All ingested content is 'fresh' — it's new to this brain.
+ * The source file's age is stored as metadata for reference only.
  */
 export function computeImportFreshness(
-  sourceUpdated: Date | undefined,
+  _sourceUpdated: Date | undefined,
 ): 'fresh' | 'aging' | 'stale' {
-  if (!sourceUpdated) return 'aging';
-
-  const ageMs = Date.now() - sourceUpdated.getTime();
-  const ageDays = ageMs / (24 * 60 * 60 * 1000);
-
-  if (ageDays <= 30) return 'fresh';
-  if (ageDays <= 90) return 'aging';
-  return 'stale';
+  return 'fresh';
 }
 
 /**
@@ -280,21 +275,44 @@ export async function importCandidates(
       continue;
     }
 
-    // Generate slug and check for pre-existing entries in the brain
+    // Generate slug from source path for uniqueness.
+    // Include repo name + parent dir + filename to avoid collisions.
+    // Example: onnxruntime-genai/cmake/external/opencv/README.md → onnxruntime-genai-opencv-readme
     let slug: string;
     try {
-      const baseSlug = generateEntryId(candidate.title);
+      const pathParts = candidate.sourcePath.replace(/\\/g, '/').split('/');
+      const filename = pathParts[pathParts.length - 1].replace(/\.md$/i, '');
+      const parentDir = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
 
-      // If the base slug exists in the DB (not just in this batch),
-      // skip unless --overwrite is set
-      const preExisting = getEntryById(db, baseSlug);
-      if (preExisting && !options.overwrite) {
-        skipped.push({ path: candidate.sourcePath, reason: `duplicate slug "${baseSlug}"` });
-        continue;
+      // For generic filenames, include parent dir in slug
+      const genericNames = new Set(['readme', 'index', 'overview', 'introduction', 'getting-started']);
+      let slugBase: string;
+      if (genericNames.has(filename.toLowerCase()) && parentDir) {
+        // Include repo name prefix if source-tag is set
+        const repoPrefix = repoName ? `${repoName}-` : '';
+        slugBase = `${repoPrefix}${parentDir}-${filename}`;
+      } else {
+        slugBase = candidate.title;
       }
 
-      // Generate unique slug handling intra-batch collisions
-      slug = generateUniqueEntryId(candidate.title, existingIds);
+      const baseSlug = generateEntryId(slugBase);
+
+      // If slug collides with existing entry, append numeric suffix
+      if (existingIds.has(baseSlug)) {
+        if (!options.overwrite) {
+          let counter = 2;
+          let uniqueSlug = `${baseSlug}-${counter}`;
+          while (existingIds.has(uniqueSlug)) {
+            counter++;
+            uniqueSlug = `${baseSlug}-${counter}`;
+          }
+          slug = uniqueSlug;
+        } else {
+          slug = baseSlug;
+        }
+      } else {
+        slug = baseSlug;
+      }
     } catch {
       skipped.push({ path: candidate.sourcePath, reason: 'cannot generate slug from title' });
       continue;
@@ -333,9 +351,10 @@ export async function importCandidates(
       source_content_hash: crypto.createHash('sha256').update(candidate.content).digest('hex'),
     };
 
-    // Set dates from source if available
+    // Store source date as metadata but use ingest date for freshness
+    // All ingested content starts fresh — it's new to THIS brain
     if (candidate.sourceUpdated) {
-      entryWithMeta.updated = candidate.sourceUpdated;
+      Object.assign(entryWithMeta, { source_updated: candidate.sourceUpdated });
     }
 
     await writeEntry(brainRepoPath, entryWithMeta);
