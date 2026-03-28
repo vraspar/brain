@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building Brain: A CLI for Team Knowledge Sharing — Brain CLI Blog</title>
+  <meta name="description" content="How I built a CLI tool that stores team knowledge in git, searches it with FTS5, and exposes it to AI agents through MCP.">
+  <meta property="og:title" content="Building Brain: A CLI for Team Knowledge Sharing">
+  <meta property="og:description" content="How I built a CLI tool that stores team knowledge in git, searches it with FTS5, and exposes it to AI agents through MCP.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://brain.vraspar.com/blog/building-brain/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='monospace' fill='%234ade80'>b</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../style.css">
+  <link rel="stylesheet" href="../blog.css">
+</head>
+<body>
+  <nav class="blog-nav">
+    <div class="container">
+      <a href="/" class="blog-nav-brand">brain</a>
+      <a href="/blog/">Blog</a>
+    </div>
+  </nav>
+  <main class="blog-main">
+    <article class="blog-post">
+      <header class="blog-post-header">
+        <h1>Building Brain: A CLI for Team Knowledge Sharing</h1>
+        <div class="blog-post-meta">
+          <time datetime="2026-03-28T00:00:00.000Z">March 27, 2026</time>
+          <span class="blog-post-author">by Vivek Parikh</span>
+        </div>
+      </header>
+      <div class="blog-post-content">
+        <h2>The problem</h2>
+<p>I use AI agents for most of my development work. They produce a lot of markdown: guides, runbooks, patterns, context files. Over months, this accumulates into a personal knowledge base that&#39;s genuinely useful.</p>
+<p>The problem is sharing it. I tried Obsidian, which works well for personal use but doesn&#39;t solve team knowledge sharing. There&#39;s no good way for a teammate&#39;s agent to access what my agent has already figured out. The pattern I kept seeing: I&#39;d ask a teammate a question, they&#39;d ask their agent, the agent would answer from scratch. That knowledge existed somewhere, but nobody could find it.</p>
+<p>Wikis don&#39;t solve this either. They require manual curation, they rot without maintenance, and AI agents can&#39;t interact with them programmatically. I wanted something that fits how developers already work: command line, git, markdown.</p>
+<h2>Architecture</h2>
+<p>Brain is a CLI tool that stores knowledge as markdown files in a git repository. Three design decisions define the architecture:</p>
+<p><strong>Git as storage.</strong> Entries are markdown files with YAML frontmatter, committed to a shared repo. No server to run, no database to manage, no accounts to create. Version history and access control come from git. A team joins by cloning the repo.</p>
+<p><strong>SQLite FTS5 for search.</strong> Each machine maintains a local search index using SQLite&#39;s FTS5 virtual table with BM25 ranking. The index is a disposable cache, rebuilt from git on every sync. This gives sub-millisecond full-text search with prefix matching and contextual snippets, without requiring any external service.</p>
+<p><strong>MCP as the agent interface.</strong> Brain exposes 10 tools and 2 resources via the Model Context Protocol over stdio. An AI agent connected to Brain can search team knowledge, read entries, publish findings, and check what&#39;s new. The agent doesn&#39;t need the CLI; it talks MCP directly. This is the key differentiator: the agent is a first-class user, not an afterthought.</p>
+<p>The rest follows from these three decisions. Read receipts are JSON files in the repo (so they sync with git). Freshness scoring uses a multiplicative formula over recency and read frequency. Pruning moves stale entries to <code>_archive/</code> (reversible). Everything runs locally, everything syncs through git.</p>
+<h2>The tagging problem</h2>
+<p>Brain&#39;s first auto-tagger was a 56-term hardcoded dictionary. It matched words like &quot;docker&quot; and &quot;kubernetes&quot; in entry content and used them as tags. This works for the obvious cases but misses everything else. A guide about &quot;payment service deployment patterns&quot; gets tagged <code>docker</code> but not <code>payments</code>, <code>deployment-pipeline</code>, or <code>microservices</code>. The dictionary doesn&#39;t know your domain.</p>
+<p>The relationship system had the same issue: four heuristic signals (shared tags, title overlap, same author, content cross-references) that miss connections between entries with different vocabulary. Two entries about Redis timeouts and connection pooling aren&#39;t linked because they happen to use different words.</p>
+<p>We&#39;re replacing this with a two-algorithm approach, both zero-dependency:</p>
+<p><strong>RAKE (Rapid Automatic Keyword Extraction)</strong> extracts multi-word keyphrases per document. Instead of matching &quot;docker&quot; from a dictionary, it extracts &quot;multi-stage docker builds&quot; as a meaningful phrase. About 60 lines of TypeScript, no corpus needed.</p>
+<p><strong>TF-IDF with zone weighting</strong> scores terms by how distinctive they are within the corpus. A term that appears in one entry but rarely across the brain scores high. A term that appears everywhere (like &quot;the&quot; or even &quot;guide&quot;) scores low. Markdown structure matters: title tokens get 3x weight, headings get 2x, code blocks 1.5x. The corpus index lives in SQLite and improves as the brain grows.</p>
+<p>For relationships, TF-IDF cosine similarity replaces the heuristic linker. Two entries with high overlap in distinctive terms are related, regardless of whether they share tags or title words. This catches the Redis timeout / connection pooling case: both score high on <code>redis</code>, <code>connection</code>, <code>timeout</code>, <code>pool</code> relative to the rest of the corpus.</p>
+<h2>Obsidian compatibility</h2>
+<p>Every brain works as an Obsidian vault. The directory structure (<code>guides/</code>, <code>skills/</code>) maps to folders. Entries are standard markdown with YAML frontmatter. Open <code>~/.brain/repo</code> in Obsidian and you get a visual graph of your team&#39;s knowledge for free.</p>
+<p>This matters because it meets people where they are. Some team members prefer a visual editor. Some want a graph view. Brain doesn&#39;t force a choice between CLI and GUI; the same data works in both.</p>
+<h2>What&#39;s next</h2>
+<p>The intelligent tagging system is the next major feature. After that:</p>
+<ul>
+<li>Better auto-linking via TF-IDF cosine similarity and entity extraction (CLI commands, file paths, URLs as link signals)</li>
+<li>Louvain clustering for auto-discovered topic groups</li>
+<li>Multi-brain support (multiple knowledge bases per machine)</li>
+<li>Auto-archive for entries that stay stale for 30+ days</li>
+</ul>
+<p>Brain is open source and in alpha. If you&#39;re interested, the repo is at <a href="https://github.com/vraspar/brain">github.com/vraspar/brain</a> and the project site is at <a href="https://brain.vraspar.com">brain.vraspar.com</a>.</p>
+
+      </div>
+    </article>
+    <div class="blog-post-footer">
+      <a href="/blog/">&larr; All posts</a>
+      <a href="https://github.com/vraspar/brain">GitHub &rarr;</a>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div>brain &middot; MIT License</div>
+    </div>
+  </footer>
+</body>
+</html>
