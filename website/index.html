@@ -3,110 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>brain — CLI-first knowledge sharing for dev teams</title>
+  <title>brain &#8212; CLI-first knowledge sharing for dev teams</title>
   <meta name="description" content="A CLI for sharing knowledge across a dev team. Markdown in git, searchable via FTS5, accessible to AI agents through MCP.">
-  <meta property="og:title" content="brain — CLI-first knowledge sharing for dev teams">
+  <meta property="og:title" content="brain &#8212; CLI-first knowledge sharing for dev teams">
   <meta property="og:description" content="A CLI for sharing knowledge across a dev team. Markdown in git, searchable via FTS5, accessible to AI agents through MCP.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://vraspar.github.io/brain/">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='monospace' fill='%234ade80'>b</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='monospace' fill='%235a7a64'>b</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <a href="#main" class="skip-link">Skip to content</a>
+<div class="nav-sentinel"></div>
 
-<!-- Hero -->
-<header class="hero">
-  <div class="container">
-    <div class="hero-wordmark">brain</div>
-    <p class="hero-subtitle">
-      <span>A CLI for sharing knowledge across a dev team.</span><br>
-      Markdown in git. Searchable via FTS5.<br>
-      Accessible to AI agents through MCP.
-    </p>
-
-    <div class="install-block">
-      <code><span class="prompt">$</span> npm install -g @vraspar/brain@alpha</code>
-      <button class="copy-btn" data-copy="npm install -g @vraspar/brain@alpha" aria-label="Copy to clipboard">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-      </button>
+<!-- Navigation -->
+<nav class="site-nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="/" class="nav-wordmark">brain</a>
+    <div class="nav-links">
+      <a href="https://github.com/vraspar/brain/tree/main/docs">Docs</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/vraspar/brain" class="nav-external">GitHub &#8599;</a>
     </div>
-
-    <div class="terminal" id="hero-terminal" aria-label="Terminal demo showing brain CLI commands">
-    </div>
-
-    <div class="hero-links">
-      <a href="https://github.com/vraspar/brain">GitHub ↗</a>
-      <a href="https://github.com/vraspar/brain/tree/main/docs">Docs ↗</a>
-    </div>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
-</header>
+</nav>
+
+<!-- Mobile menu overlay -->
+<div class="mobile-menu" aria-hidden="true">
+  <a href="https://github.com/vraspar/brain/tree/main/docs">Docs</a>
+  <a href="/blog/">Blog</a>
+  <a href="https://github.com/vraspar/brain">GitHub &#8599;</a>
+</div>
 
 <main id="main">
 
-  <!-- How It Works -->
-  <section class="reveal">
+  <!-- Hero -->
+  <section class="hero">
     <div class="container">
-      <h2>How it works</h2>
+      <h1 class="hero-wordmark">brain</h1>
+      <p class="hero-subtitle">
+        Share what your team knows.<br>
+        <span class="hero-detail">A CLI that stores knowledge as markdown in git, makes it searchable with FTS5, and exposes it to your AI agent through MCP.</span>
+      </p>
 
-      <div class="steps-grid">
-        <div>
-          <div class="step-label">1. Start</div>
-          <div class="terminal" aria-label="Terminal showing brain init and connect commands">
-            <div><span class="comment"># First person creates a brain</span></div>
-            <div><span class="prompt">$ </span><span class="command">brain init --name "Acme Engineering"</span></div>
-            <div class="output" style="white-space:pre">
-✅ Brain "Acme Engineering" is ready!</div>
-            <div>&nbsp;</div>
-            <div><span class="comment"># Teammates join it</span></div>
-            <div><span class="prompt">$ </span><span class="command">brain connect https://github.com/acme/brain-hub.git</span></div>
-          </div>
-        </div>
+      <div class="install-pill">
+        <code><span class="prompt">$</span> npm install -g @vraspar/brain@alpha</code>
+        <button class="copy-btn" data-copy="npm install -g @vraspar/brain@alpha" aria-label="Copy to clipboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+      </div>
 
-        <div>
-          <div class="step-label">2. Add knowledge</div>
-          <div class="terminal" aria-label="Terminal showing brain push and ingest commands">
-            <div><span class="comment"># Push a single guide</span></div>
-            <div><span class="prompt">$ </span><span class="command">brain push ./guide.md</span></div>
-            <div class="output" style="white-space:pre">
-✅ Pushed: Docker Multi-Stage Builds
-   Tags: docker (auto-detected)</div>
-            <div>&nbsp;</div>
-            <div><span class="comment"># Or import docs from a repo</span></div>
-            <div><span class="prompt">$ </span><span class="command">brain ingest https://github.com/acme/docs.git</span></div>
-            <div class="output" style="white-space:pre">
-✅ Ingested 24 entries from acme/docs</div>
-          </div>
-        </div>
-
-        <div class="step-full">
-          <div class="step-label">3. Discover</div>
-          <div class="terminal" aria-label="Terminal showing brain search command">
-            <div><span class="prompt">$ </span><span class="command">brain search "kubernetes"</span></div>
-            <div class="output" style="white-space:pre">
+      <div class="code-block" aria-label="Terminal demo showing brain search command">
+        <div><span class="prompt">$ </span><span class="cmd">brain search "kubernetes"</span></div>
+        <div class="code-output">
 Found 3 results:
-┌────────────────────────┬────────┬───────┬───────────┐
-│ Title                  │ Author │ Type  │ Tags      │
-├────────────────────────┼────────┼───────┼───────────┤
-│ K8s Deployment Guide   │ bob    │ guide │ k8s       │
-│ CI Pipeline            │ carol  │ guide │ ci, k8s   │
-│ Helm Chart Patterns    │ alice  │ skill │ helm, k8s │
-└────────────────────────┴────────┴───────┴───────────┘</div>
-          </div>
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474; Title                  &#9474; Author &#9474; Type  &#9474; Tags      &#9474;
+&#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+&#9474; K8s Deployment Guide   &#9474; bob    &#9474; guide &#9474; k8s       &#9474;
+&#9474; CI Pipeline            &#9474; carol  &#9474; guide &#9474; ci, k8s   &#9474;
+&#9474; Helm Chart Patterns    &#9474; alice  &#9474; skill &#9474; helm, k8s &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section reveal">
+    <div class="container">
+      <div class="section-label">How it works</div>
+
+      <div class="step">
+        <div class="step-label"><span class="step-num">01</span> &#8212; Start</div>
+        <div class="code-block" aria-label="Brain init and connect commands">
+          <div><span class="comment"># First person creates a brain</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">brain init --name "Acme Engineering"</span></div>
+          <div class="code-output">&#10003; Brain "Acme Engineering" is ready!</div>
+          <div>&nbsp;</div>
+          <div><span class="comment"># Teammates join it</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">brain connect https://github.com/acme/brain-hub.git</span></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-label"><span class="step-num">02</span> &#8212; Add knowledge</div>
+        <div class="code-block" aria-label="Brain push and ingest commands">
+          <div><span class="comment"># Push a single guide</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">brain push ./guide.md</span></div>
+          <div class="code-output">&#10003; Pushed: Docker Multi-Stage Builds
+   Tags: docker (auto-detected)</div>
+          <div>&nbsp;</div>
+          <div><span class="comment"># Or import docs from a repo</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">brain ingest https://github.com/acme/docs.git</span></div>
+          <div class="code-output">&#10003; Ingested 24 entries from acme/docs</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-label"><span class="step-num">03</span> &#8212; Discover</div>
+        <div class="code-block" aria-label="Brain trail command">
+          <div><span class="prompt">$ </span><span class="cmd">brain trail kubernetes</span></div>
+          <div class="code-output">K8s Deployment Guide
+  &#8594; Helm Chart Patterns (tags: k8s)
+  &#8594; CI Pipeline (tags: k8s, ci)</div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Why Brain -->
-  <section class="reveal">
+  <section class="section reveal">
     <div class="container">
-      <h2>Why brain?</h2>
+      <div class="section-label">Why brain</div>
 
       <div class="cards-grid">
         <div class="card">
@@ -121,27 +137,26 @@ Found 3 results:
           <h3>MCP-native</h3>
           <p>10 tools and 2 resources via Model Context Protocol. Your AI agent can search, read, edit, and publish entries. <code>brain serve</code> starts the server.</p>
         </div>
+        <div class="card">
+          <h3>Knowledge trails</h3>
+          <p>Auto-computed links between entries. <code>brain trail &lt;topic&gt;</code> follows connections across your team&#8217;s knowledge graph.</p>
+        </div>
       </div>
 
-      <p class="section-also">Also: repo ingest · freshness scoring · knowledge trails · Obsidian vault · 20 commands</p>
-
-      <p class="section-punch">
-        <strong>Zero infrastructure. One command to start.</strong><br>
-        <code>brain connect https://github.com/acme/brain-hub.git</code>
-      </p>
+      <p class="also-line">Also: repo ingest &#183; freshness scoring &#183; Obsidian vault &#183; interactive search &#183; 20 commands &#183; <code>--format json</code></p>
     </div>
   </section>
 
   <!-- Agent Integration -->
-  <section class="agent-section reveal">
+  <section class="section reveal">
     <div class="container">
-      <h2>Works with your AI agent</h2>
+      <div class="section-label">AI agent integration</div>
 
-      <p class="agent-desc">Add to your MCP client config:</p>
+      <p class="section-desc">Add brain to your MCP client:</p>
 
-      <div class="terminal" aria-label="MCP configuration JSON">
-        <div class="terminal-title">mcp.json</div>
-        <div class="output" style="white-space:pre">{
+      <div class="code-block code-block--narrow" aria-label="MCP configuration JSON">
+        <div class="code-file-label">mcp.json</div>
+        <div class="code-output">{
   "mcpServers": {
     "brain": {
       "command": "brain",
@@ -151,28 +166,25 @@ Found 3 results:
 }</div>
       </div>
 
-      <p class="agent-tools">10 tools: push_knowledge · search_knowledge · whats_new · get_entry · brain_stats · get_recommendations · update_entry · list_entries · explore_topic · retract_entry<br>2 resources: brain://digest · brain://stats</p>
-
-      <p class="agent-desc">Your agent can search team knowledge, publish findings, and check what's new.</p>
-
-      <p class="agent-clients">Claude · Copilot · Cursor · Windsurf</p>
+      <p class="agent-meta">Works with Claude &#183; Copilot &#183; Cursor &#183; Windsurf</p>
+      <p class="section-desc">10 tools &#183; 2 resources &#183; Your agent can search team knowledge, publish findings, and check what&#8217;s new.</p>
     </div>
   </section>
 
   <!-- Quick Start -->
-  <section class="quick-start reveal">
+  <section class="section reveal">
     <div class="container">
-      <h2>Quick start</h2>
+      <div class="section-label">Quick start</div>
 
-      <div class="terminal" aria-label="Installation and setup commands">
+      <div class="code-block code-block--narrow" aria-label="Installation and setup commands">
         <div><span class="comment"># Install</span></div>
-        <div><span class="prompt">$ </span><span class="command">npm install -g @vraspar/brain@alpha</span></div>
+        <div><span class="prompt">$ </span><span class="cmd">npm install -g @vraspar/brain@alpha</span></div>
         <div>&nbsp;</div>
         <div><span class="comment"># Create a brain</span></div>
-        <div><span class="prompt">$ </span><span class="command">brain init --name "My Team"</span></div>
+        <div><span class="prompt">$ </span><span class="cmd">brain init --name "My Team"</span></div>
         <div>&nbsp;</div>
         <div><span class="comment"># Or join an existing one</span></div>
-        <div><span class="prompt">$ </span><span class="command">brain connect &lt;url&gt;</span></div>
+        <div><span class="prompt">$ </span><span class="cmd">brain connect &lt;url&gt;</span></div>
       </div>
 
       <p class="prereqs">Requires Node.js 20+ and git.</p>
@@ -180,40 +192,28 @@ Found 3 results:
   </section>
 
   <!-- Architecture -->
-  <section class="architecture reveal">
+  <section class="section reveal">
     <div class="container">
-      <h2>Under the hood</h2>
+      <div class="section-label">Under the hood</div>
 
-<pre class="arch-pre" aria-label="Architecture diagram">
-       brain push / brain search / brain digest
-                        │
-                 ┌──────▼──────┐
-                 │     <span class="arch-accent">CLI</span>     │
-                 └──────┬──────┘
-                        │
-       ┌────────────────┼────────────────┐
-       ▼                ▼                ▼
-  ┌──────────┐   ┌────────────┐   ┌──────────┐
-  │ <span class="arch-accent">Git repo</span> │   │ <span class="arch-accent">SQLite</span>    │   │ <span class="arch-accent">Receipts</span> │
-  │ (storage)│   │ <span class="arch-accent">FTS5</span>      │   │ (analytics│
-  │          │   │ (search)   │   │          │
-  └──────────┘   └────────────┘   └──────────┘
-</pre>
-
-      <div class="arch-notes">
-        <div class="arch-note">
-          <strong>Storage</strong>
-          Markdown + YAML frontmatter in a git repo
+      <div class="arch-flow" aria-label="Architecture diagram">
+        <div class="arch-box">
+          <span class="arch-name">Git repo</span>
+          <span class="arch-role">storage</span>
         </div>
-        <div class="arch-note">
-          <strong>Search</strong>
-          FTS5 virtual table, rebuilt on sync
+        <span class="arch-arrow" aria-hidden="true">&#8594;</span>
+        <div class="arch-box">
+          <span class="arch-name">SQLite FTS5</span>
+          <span class="arch-role">search</span>
         </div>
-        <div class="arch-note">
-          <strong>Analytics</strong>
-          JSON receipts, eventually consistent
+        <span class="arch-arrow" aria-hidden="true">&#8594;</span>
+        <div class="arch-box">
+          <span class="arch-name">Receipts</span>
+          <span class="arch-role">analytics</span>
         </div>
       </div>
+
+      <p class="section-desc arch-desc">Entries are markdown with YAML frontmatter, stored in a git repo. The search index is a local SQLite cache, rebuilt from source on every sync. Read receipts track who reads what.</p>
     </div>
   </section>
 
@@ -222,15 +222,16 @@ Found 3 results:
 <!-- Footer -->
 <footer class="site-footer">
   <div class="container">
-    <div>brain v0.1.0-alpha · MIT License</div>
+    <div class="footer-meta">brain v0.1.0-alpha &#183; MIT</div>
     <div class="footer-links">
-      <a href="https://github.com/vraspar/brain">GitHub ↗</a>
-      <a href="https://github.com/vraspar/brain/tree/main/docs">Docs ↗</a>
-      <a href="https://github.com/vraspar/brain/blob/main/ROADMAP.md">Roadmap ↗</a>
+      <a href="https://github.com/vraspar/brain">GitHub &#8599;</a>
+      <a href="https://github.com/vraspar/brain/tree/main/docs">Docs</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/vraspar/brain/blob/main/ROADMAP.md">Roadmap</a>
     </div>
   </div>
 </footer>
 
-<script src="terminal.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
