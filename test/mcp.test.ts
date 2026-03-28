@@ -28,14 +28,18 @@ let db: Database.Database;
 let server: McpServer;
 let context: BrainMcpContext;
 
+// Relative dates so tests work regardless of when they run
+const now = new Date();
+const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+
 function makeEntry(overrides: Partial<Entry> = {}): Entry {
   return {
     id: 'test-entry',
     title: 'Test Entry',
     type: 'guide',
     author: 'alice',
-    created: '2026-03-20T10:00:00Z',
-    updated: '2026-03-20T10:00:00Z',
+    created: daysAgo(1),
+    updated: daysAgo(1),
     tags: ['testing'],
     status: 'active',
     content: 'This is test content.',
@@ -54,8 +58,8 @@ const sampleEntries: Entry[] = [
     content: 'How to deploy applications to Kubernetes clusters.',
     filePath: 'guides/k8s-deployment.md',
     summary: 'Step-by-step K8s deployment',
-    created: '2026-03-18T10:00:00Z',
-    updated: '2026-03-20T14:00:00Z',
+    created: daysAgo(3),
+    updated: daysAgo(1),
   }),
   makeEntry({
     id: 'react-testing',
@@ -66,8 +70,8 @@ const sampleEntries: Entry[] = [
     content: 'Best practices for testing React components.',
     filePath: 'skills/react-testing.md',
     summary: 'React testing patterns',
-    created: '2026-03-19T08:00:00Z',
-    updated: '2026-03-21T12:00:00Z',
+    created: daysAgo(2),
+    updated: daysAgo(0),
   }),
   makeEntry({
     id: 'ci-pipeline',
@@ -78,8 +82,8 @@ const sampleEntries: Entry[] = [
     content: 'Setting up CI pipelines with GitHub Actions.',
     filePath: 'skills/ci-pipeline.md',
     summary: 'CI pipeline automation',
-    created: '2026-03-21T09:00:00Z',
-    updated: '2026-03-21T09:00:00Z',
+    created: daysAgo(0),
+    updated: daysAgo(0),
   }),
 ];
 
@@ -97,7 +101,7 @@ beforeEach(() => {
     remote: 'https://github.com/team/brain.git',
     local: tempDir,
     author: 'alice',
-    lastSync: '2026-03-21T00:00:00Z',
+    lastSync: daysAgo(0),
   };
 
   context = { config, db };
