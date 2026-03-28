@@ -2,25 +2,27 @@
 
 Static landing page for the [Brain CLI](https://github.com/vraspar/brain) project.
 
+## Design: "Paper"
+
+Warm, Muji-inspired minimalism with cream backgrounds and sage green accents. Dark code blocks on a light page create the visual signature. No terminal animations, no dark-mode template energy.
+
 ## Stack
 
-- Plain HTML + CSS + vanilla JavaScript
+- Plain HTML + CSS + vanilla JavaScript (~70 lines)
 - No frameworks, no build step, no dependencies
-- Google Fonts: JetBrains Mono + Inter
+- Google Fonts: Inter + JetBrains Mono
 
 ## Files
 
 ```
 website/
-├── index.html      # The entire page
-├── style.css       # All styles
-├── terminal.js     # Terminal typing animation (~170 lines)
-└── README.md       # This file
++-- index.html      # The page
++-- style.css       # Paper theme
++-- main.js         # Scroll reveal, nav, copy button
++-- README.md       # This file
 ```
 
 ## Local preview
-
-Open `index.html` in a browser, or use any static server:
 
 ```bash
 cd website
@@ -31,24 +33,17 @@ python3 -m http.server 8000
 
 ## Deploy to GitHub Pages
 
-### Option 1: From `website/` directory
-
-1. Go to **Settings → Pages** in the GitHub repo
-2. Set source to **Deploy from a branch**
+1. Go to Settings > Pages in the GitHub repo
+2. Set source to Deploy from a branch
 3. Select branch `main` and folder `/website`
-4. Save — site deploys to `https://vraspar.github.io/brain/`
+4. Save
 
-### Option 2: Copy to `docs/` (if Pages requires it)
+## Color palette
 
-```bash
-cp -r website/ docs/website/
-git add docs/website/
-git commit -m "deploy: website to GitHub Pages"
-git push
-```
+- Page background: `#faf9f6` (warm cream)
+- Card background: `#f2f0ec` (warm gray)
+- Accent: `#5a7a64` (muted sage)
+- Code blocks: `#2c2c2c` (dark)
+- Text: `#3d3d3d` (charcoal)
 
-Then configure Pages to serve from `/docs/website`.
-
-## Design
-
-Based on the Phosphor design spec. Dark monochrome theme with green (#4ade80) accent. All color combinations pass WCAG AA, most pass AAA.
+All color combinations pass WCAG AA.
