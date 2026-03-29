@@ -1,18 +1,18 @@
 :root {
   --bg: #f3efe9;
   --bg-alt: #ede8e1;
-  --bg-code: #1d1d1d;
-  --ink: #2b2b28;
-  --ink-light: #5c5955;
+  --bg-code: #2d2a26;
+  --ink: #3a3835;
+  --ink-light: #635f5a;
   --ink-faint: #8a8580;
   --ink-ghost: #b5b0aa;
-  --clay: #a0785a;
-  --clay-light: #c49a78;
-  --code-fg: #d4d0c8;
-  --code-prompt: #b8a88a;
-  --code-comment: #6b6660;
-  --code-border: #2a2a27;
-  --grain-opacity: 0.035;
+  --clay: #8f7561;
+  --clay-light: #a8917b;
+  --code-fg: #ccc8c0;
+  --code-prompt: #a89880;
+  --code-comment: #736d66;
+  --code-border: #3a3733;
+  --grain-opacity: 0.03;
 }
 
 *,
@@ -317,7 +317,7 @@ code {
   background: var(--bg-code);
   color: var(--code-fg);
   border: 1px solid var(--code-border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 1.25rem 1.5rem;
   font-family: 'IBM Plex Mono', Menlo, monospace;
   font-size: 0.8rem;
@@ -334,7 +334,7 @@ code {
 }
 
 .code-block .cmd { color: var(--code-fg); }
-.code-block .out { color: #a8a49c; white-space: pre; }
+.code-block .out { color: #9e9a92; white-space: pre; }
 .code-block .comment { color: var(--code-comment); }
 
 .file-label {

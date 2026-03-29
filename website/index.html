@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>brain — CLI-first knowledge sharing for dev teams</title>
+  <title>brain. knowledge sharing for dev teams</title>
   <meta name="description" content="A CLI for sharing knowledge across a dev team. Markdown in git, searchable via FTS5, accessible to AI agents through MCP.">
-  <meta property="og:title" content="brain — CLI-first knowledge sharing for dev teams">
+  <meta property="og:title" content="brain. knowledge sharing for dev teams">
   <meta property="og:description" content="A CLI for sharing knowledge across a dev team. Markdown in git, searchable via FTS5, accessible to AI agents through MCP.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://vraspar.github.io/brain/">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='serif' fill='%23a0785a'>b</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80' font-family='serif' fill='%238f7561'>b</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
   <section class="hero">
     <div class="content-col">
       <h1>Share what<br>your team knows.</h1>
-      <p class="hero-sub">A command-line tool for publishing and discovering technical knowledge. Markdown in git, searchable via SQLite FTS5, exposed to AI agents through MCP.</p>
+      <p class="hero-sub">Your team writes things down. Brain makes those notes findable. It stores markdown in git, indexes it with SQLite FTS5, and lets AI agents access it through MCP.</p>
       <div class="install-line">
         <code><span class="prompt">$</span> npm install -g @vraspar/brain@alpha</code>
         <button class="copy-btn" data-copy="npm install -g @vraspar/brain@alpha" aria-label="Copy to clipboard">
@@ -95,13 +95,10 @@
         <div><span class="prompt">$ </span><span class="cmd">brain search "kubernetes"</span></div>
         <div class="out">
 Found 3 results:
-&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
-&#9474; Title                  &#9474; Author &#9474; Type  &#9474; Tags      &#9474;
-&#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
-&#9474; K8s Deployment Guide   &#9474; bob    &#9474; guide &#9474; k8s       &#9474;
-&#9474; CI Pipeline            &#9474; carol  &#9474; guide &#9474; ci, k8s   &#9474;
-&#9474; Helm Chart Patterns    &#9474; alice  &#9474; skill &#9474; helm, k8s &#9474;
-&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+  K8s Deployment Guide     bob     guide    k8s
+  CI Pipeline              carol   guide    ci, k8s
+  Helm Chart Patterns      alice   skill    helm, k8s</div>
       </div>
     </div>
   </section>
@@ -114,19 +111,19 @@ Found 3 results:
       <div class="features-grid">
         <div>
           <h3>Git as storage</h3>
-          <p>Entries are markdown in a git repo. No server. No infrastructure. Version history and access control are free.</p>
+          <p>Entries are markdown files in a git repo. No server, no database. You get version history and access control for free.</p>
         </div>
         <div>
           <h3>FTS5 search</h3>
-          <p>SQLite full-text search with BM25 ranking. Sub-millisecond. Works offline. The index is a disposable cache, rebuilt from source on every sync.</p>
+          <p>SQLite full-text search with BM25 ranking. Fast enough that you won't notice it. Works offline. Rebuilt from source on every sync.</p>
         </div>
         <div>
           <h3>MCP for agents</h3>
-          <p>10 tools, 2 resources via Model Context Protocol. Your AI agent reads your team&#8217;s knowledge base natively. <code>brain serve</code> starts the server.</p>
+          <p>10 tools and 2 resources over Model Context Protocol. Your AI agent can read what your team has written. <code>brain serve</code> starts it.</p>
         </div>
         <div>
           <h3>Knowledge trails</h3>
-          <p>Auto-linked entries via tag overlap and content similarity. <code>brain trail &lt;topic&gt;</code> walks the knowledge graph.</p>
+          <p>Entries link to each other through tags and content overlap. <code>brain trail &lt;topic&gt;</code> walks the connections.</p>
         </div>
       </div>
 
@@ -184,7 +181,7 @@ Found 3 results:
   <section class="section reveal">
     <div class="content-col">
       <div class="section-label">Under the hood</div>
-      <p class="arch-prose">Brain stores entries as markdown files with YAML frontmatter in a git repository. The search index is an SQLite FTS5 virtual table, rebuilt from the markdown files on every sync. Read receipts are JSON files committed alongside entries &#8212; analytics with zero infrastructure.</p>
+      <p class="arch-prose">Brain stores entries as markdown files with YAML frontmatter in a git repository. The search index is a local SQLite FTS5 table, rebuilt from the markdown on every sync. Read receipts are JSON files committed alongside entries. Analytics with zero infrastructure.</p>
     </div>
   </section>
 
