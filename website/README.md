@@ -1,54 +1,36 @@
 # Brain CLI Website
 
-Static landing page for the [Brain CLI](https://github.com/vraspar/brain) project.
+Static landing page for [Brain CLI](https://github.com/vraspar/brain).
+
+## Design: "Zine"
+
+A homepage that looks like a printed zine. Serif headings (Newsreader), asymmetric layout, parchment background, clay accent, CSS film grain, architecture as prose. Not a tech template.
 
 ## Stack
 
-- Plain HTML + CSS + vanilla JavaScript
-- No frameworks, no build step, no dependencies
-- Google Fonts: JetBrains Mono + Inter
+- Plain HTML + CSS + vanilla JS (~65 lines)
+- No frameworks, no build step
+- Google Fonts: Newsreader + Inter + IBM Plex Mono
 
 ## Files
 
 ```
 website/
-├── index.html      # The entire page
-├── style.css       # All styles
-├── terminal.js     # Terminal typing animation (~170 lines)
-└── README.md       # This file
+├── index.html
+├── style.css
+├── main.js
+└── README.md
 ```
 
-## Local preview
-
-Open `index.html` in a browser, or use any static server:
+## Preview
 
 ```bash
-cd website
-npx serve .
-# or
-python3 -m http.server 8000
+cd website && npx serve .
 ```
 
-## Deploy to GitHub Pages
+## Palette
 
-### Option 1: From `website/` directory
-
-1. Go to **Settings → Pages** in the GitHub repo
-2. Set source to **Deploy from a branch**
-3. Select branch `main` and folder `/website`
-4. Save — site deploys to `https://vraspar.github.io/brain/`
-
-### Option 2: Copy to `docs/` (if Pages requires it)
-
-```bash
-cp -r website/ docs/website/
-git add docs/website/
-git commit -m "deploy: website to GitHub Pages"
-git push
-```
-
-Then configure Pages to serve from `/docs/website`.
-
-## Design
-
-Based on the Phosphor design spec. Dark monochrome theme with green (#4ade80) accent. All color combinations pass WCAG AA, most pass AAA.
+- Background: `#f3efe9` (parchment)
+- Ink: `#2b2b28` (warm near-black)
+- Accent: `#a0785a` (clay)
+- Code: `#1d1d1d` (darkroom)
