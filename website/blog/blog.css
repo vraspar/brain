@@ -50,6 +50,11 @@
   color: var(--ink);
 }
 
+.blog-nav-links {
+  display: flex;
+  gap: 2rem;
+}
+
 /* Blog main layout */
 .blog-main {
   max-width: 620px;
@@ -189,7 +194,7 @@
 .blog-post-footer {
   display: flex;
   justify-content: space-between;
-  padding: 2rem 0 4rem;
+  padding: 2.5rem 0 4rem;
   border-top: 1px solid var(--ink-ghost);
   font-size: 0.8rem;
 }
@@ -251,6 +256,7 @@
   color: var(--ink);
   margin-bottom: 0.4rem;
   transition: color 200ms ease;
+  letter-spacing: -0.01em;
 }
 
 .blog-index-post time {

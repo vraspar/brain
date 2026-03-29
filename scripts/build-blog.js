@@ -19,7 +19,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const POSTS_DIR = join(ROOT, 'website', 'blog-src', 'posts');
 const OUTPUT_DIR = join(ROOT, 'website', 'blog');
-const SITE_URL = 'https://brain.vraspar.com';
+const SITE_URL = 'https://vraspar.github.io/brain';
 
 function loadPosts() {
   if (!existsSync(POSTS_DIR)) return [];
@@ -56,7 +56,7 @@ function renderPost(post) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${esc(post.title)} \u2014 Brain CLI Blog</title>
+  <title>${esc(post.title)}, Brain CLI Blog</title>
   <meta name="description" content="${esc(post.summary || '')}">
   <meta property="og:title" content="${esc(post.title)}">
   <meta property="og:description" content="${esc(post.summary || '')}">
@@ -71,7 +71,11 @@ ${HEAD}
   <nav class="blog-nav">
     <div class="container">
       <a href="/" class="blog-nav-brand">brain</a>
-      <a href="/blog/">Blog</a>
+      <div class="blog-nav-links">
+        <a href="https://github.com/vraspar/brain/tree/main/docs">Docs</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://github.com/vraspar/brain">GitHub</a>
+      </div>
     </div>
   </nav>
   <main class="blog-main">
@@ -116,9 +120,9 @@ function renderIndex(posts) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blog \u2014 Brain CLI</title>
+  <title>Blog, Brain CLI</title>
   <meta name="description" content="Blog posts about building Brain CLI.">
-  <meta property="og:title" content="Blog \u2014 Brain CLI">
+  <meta property="og:title" content="Blog, Brain CLI">
   <meta property="og:type" content="website">
   <meta property="og:url" content="${SITE_URL}/blog/">
   <meta name="twitter:card" content="summary">
@@ -130,7 +134,11 @@ ${HEAD}
   <nav class="blog-nav">
     <div class="container">
       <a href="/" class="blog-nav-brand">brain</a>
-      <a href="/blog/">Blog</a>
+      <div class="blog-nav-links">
+        <a href="https://github.com/vraspar/brain/tree/main/docs">Docs</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://github.com/vraspar/brain">GitHub</a>
+      </div>
     </div>
   </nav>
   <main class="blog-main">
