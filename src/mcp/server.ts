@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig } from '../core/config.js';
@@ -7,6 +10,9 @@ import { registerTools } from './tools.js';
 import { registerResources } from './resources.js';
 import type { BrainConfig } from '../types.js';
 import type Database from 'better-sqlite3';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
 
 export interface BrainMcpContext {
   config: BrainConfig;
@@ -27,7 +33,7 @@ export function createBrainServer(): { server: McpServer; context: BrainMcpConte
 
   const server = new McpServer({
     name: 'brain',
-    version: '0.1.0',
+    version: pkg.version,
   });
 
   registerTools(server, context);
