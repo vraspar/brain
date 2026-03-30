@@ -143,11 +143,15 @@ export const ingestCommand = new Command('ingest')
             .map(e => e.filePath);
 
           if (entryFiles.length > 0) {
-            await commitAndPush(
+            const { pushed: ingestPushed, pushError } = await commitAndPush(
               config.local,
               entryFiles,
               `Ingest ${result.imported.length} entries from ${repoName}`,
             );
+            if (!ingestPushed && format !== 'json') {
+              const reason = pushError ? `: ${pushError}` : '';
+              console.log(chalk.yellow(`   ⚠ Committed locally. Push failed${reason} — run "brain sync" to retry.`));
+            }
           }
         } else if (result.imported.length > 0) {
           // Local-only: rebuild index
@@ -160,8 +164,8 @@ export const ingestCommand = new Command('ingest')
           updateFreshnessScores(db, statsMap);
         }
 
-        // Register source for future sync
-        if (result.imported.length > 0 && headCommit) {
+        // Register source for future sync (even without headCommit for non-git sources)
+        if (result.imported.length > 0) {
           upsertSource(repoName, {
             url: source,
             path: options.path,

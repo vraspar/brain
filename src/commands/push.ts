@@ -198,6 +198,8 @@ export const pushCommand = new Command('push')
 
       const results: PushResult[] = [];
       const errors: { file: string; error: string }[] = [];
+      let skipPush = !config.remote;
+      let pushed = false;
 
       for (const filePath of filePaths) {
         try {
@@ -225,12 +227,15 @@ export const pushCommand = new Command('push')
         const commitMsg = results.length === 1
           ? `Add ${results[0].type}: ${results[0].title}`
           : `Add ${results.length} entries`;
-        const skipPush = !config.remote;
 
-        await commitAndPush(config.local, allFilePaths, commitMsg, { skipPush });
+        const pushResult = await commitAndPush(config.local, allFilePaths, commitMsg, { skipPush });
+        pushed = pushResult.pushed;
 
         if (skipPush && format !== 'json') {
           console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+        } else if (!skipPush && !pushed && format !== 'json') {
+          const reason = pushResult.pushError ? `: ${pushResult.pushError}` : '';
+          console.log(chalk.yellow(`   ⚠ Committed locally. Push failed${reason} — run "brain sync" to retry.`));
         }
       }
 
@@ -245,9 +250,10 @@ export const pushCommand = new Command('push')
       }
 
       if (format === 'json') {
+        const pushStatus = skipPush ? 'local-only' : (pushed ? 'pushed' : 'push-failed');
         const output = results.length === 1 && errors.length === 0
-          ? { status: 'pushed', ...results[0] }
-          : { status: errors.length > 0 ? 'partial' : 'pushed', succeeded: results.length, failed: errors.length, entries: results, errors };
+          ? { status: pushStatus, ...results[0] }
+          : { status: errors.length > 0 ? 'partial' : pushStatus, succeeded: results.length, failed: errors.length, entries: results, errors };
         console.log(JSON.stringify(output, null, 2));
       } else if (results.length === 1 && errors.length === 0) {
         const r = results[0];
