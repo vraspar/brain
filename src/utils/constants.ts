@@ -42,3 +42,32 @@ export const VOLATILE_TAGS = new Set([
 export const STABLE_TAGS = new Set([
   'architecture', 'design', 'principles', 'patterns', 'conventions',
 ]);
+
+/** Common English stop words filtered from natural language queries before FTS5 search. */
+export const STOP_WORDS = new Set([
+  // Question words
+  'what', 'which', 'where', 'when', 'how', 'why', 'who', 'whom',
+  // Articles & determiners
+  'the', 'a', 'an', 'this', 'that', 'these', 'those',
+  // Pronouns
+  'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
+  'my', 'your', 'his', 'its', 'our', 'their', 'mine', 'yours', 'ours', 'theirs',
+  // Prepositions
+  'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'into',
+  'about', 'over', 'after', 'before', 'between', 'under', 'above', 'through',
+  // Conjunctions
+  'and', 'but', 'or', 'nor', 'so', 'yet',
+  // Common verbs
+  'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being',
+  'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing',
+  'will', 'would', 'shall', 'should', 'may', 'might', 'can', 'could', 'must',
+  // Adverbs & filler words
+  'not', 'no', 'there', 'here', 'then', 'than', 'also', 'just', 'only',
+  'very', 'too', 'some', 'any', 'all', 'each', 'every', 'both', 'few',
+  'more', 'most', 'other', 'such', 'own',
+  // Query-intent words: terms that express *how* the user is asking, not *what*
+  // they're asking about. Filtered because they pollute FTS5 AND queries without
+  // adding topical signal (e.g., "What approaches for caching?" → keep "caching").
+  'approaches', 'ways', 'best', 'good', 'like', 'using', 'used',
+  'need', 'want', 'help', 'looking', 'find', 'know', 'tell',
+]);

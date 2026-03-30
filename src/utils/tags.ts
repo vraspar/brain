@@ -1,4 +1,4 @@
-import { KNOWN_TECH_TERMS } from './constants.js';
+import { KNOWN_TECH_TERMS, STOP_WORDS } from './constants.js';
 
 // Re-export for backward compatibility
 export { KNOWN_TECH_TERMS } from './constants.js';
@@ -16,4 +16,16 @@ export function extractTags(content: string): string[] {
     }
   }
   return [...found];
+}
+
+/**
+ * Extract significant words from text for search queries.
+ * Strips punctuation, filters stop words, deduplicates, and caps at 10 terms.
+ */
+export function extractSignificantWords(text: string): string[] {
+  const words = text.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+  return [...new Set(words)].slice(0, 10);
 }

@@ -15,7 +15,8 @@ import { createEntry, scanEntries, writeEntry } from '../src/core/entry.js';
 import { getEntryStats, getStats, recordReceipt } from '../src/core/receipts.js';
 import { computeFreshness } from '../src/core/freshness.js';
 import { buildUsageStatsMap } from '../src/core/freshness.js';
-import { extractTags } from '../src/utils/tags.js';
+import { extractSignificantWords, extractTags } from '../src/utils/tags.js';
+import { STOP_WORDS } from '../src/utils/constants.js';
 import { parseTimeWindow } from '../src/utils/time.js';
 import { registerTools } from '../src/mcp/tools.js';
 import { registerResources } from '../src/mcp/resources.js';
@@ -316,6 +317,69 @@ describe('get_recommendations logic', () => {
     const keywords = extractTags('quantum physics parallel universes');
     expect(results).toHaveLength(0);
     expect(keywords).toHaveLength(0);
+  });
+
+  it('filters stop words from natural language queries', () => {
+    const topic = 'What approaches for caching API responses?';
+    const techKeywords = extractTags(topic);
+    const words = extractSignificantWords(topic);
+    const allKeywords = [...new Set([...techKeywords, ...words])];
+
+    // Stop words should be removed
+    expect(allKeywords).not.toContain('what');
+    expect(allKeywords).not.toContain('for');
+    // 'approaches' is in STOP_WORDS as a query filler word
+    expect(allKeywords).not.toContain('approaches');
+    // Meaningful words should remain
+    expect(allKeywords).toContain('caching');
+    expect(allKeywords).toContain('responses');
+    expect(allKeywords).toContain('api');
+    expect(allKeywords.length).toBeGreaterThan(0);
+  });
+
+  it('handles queries that are mostly stop words', () => {
+    const topic = 'What is the best way to do this?';
+    const techKeywords = extractTags(topic);
+    const words = extractSignificantWords(topic);
+    const allKeywords = [...new Set([...techKeywords, ...words])];
+
+    // Most words filtered, but 'way' survives (it's a meaningful word)
+    expect(allKeywords.length).toBeLessThanOrEqual(1);
+    // The query should still produce something rather than the raw NL input
+    const searchQuery = allKeywords.length > 0 ? allKeywords.join(' ') : topic;
+    expect(searchQuery).not.toContain('what');
+    expect(searchQuery).not.toContain('best');
+  });
+
+  it('produces search results for natural language queries about existing content', () => {
+    // This is the exact scenario from the bug report
+    const topic = 'How do I deploy applications to Kubernetes?';
+    const techKeywords = extractTags(topic);
+    const words = extractSignificantWords(topic);
+    const allKeywords = [...new Set([...techKeywords, ...words])];
+    const searchQuery = allKeywords.length > 0 ? allKeywords.join(' ') : topic;
+
+    // Should contain 'kubernetes' (tech term) and 'deploy'/'applications' (content words)
+    expect(allKeywords).toContain('kubernetes');
+    expect(allKeywords).toContain('deploy');
+    expect(allKeywords).toContain('applications');
+    expect(allKeywords).not.toContain('how');
+    expect(allKeywords).not.toContain('the');
+
+    // FTS search with filtered keywords should find our k8s entry
+    const results = searchEntries(db, searchQuery, 5);
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results[0].id).toBe('k8s-deployment');
+  });
+
+  it('strips punctuation from words before stop word check', () => {
+    const words = extractSignificantWords('What are the best testing approaches?');
+
+    // 'approaches?' should become 'approaches' and be filtered as stop word
+    expect(words).not.toContain('approaches');
+    expect(words).not.toContain('approaches?');
+    // 'testing' should survive
+    expect(words).toContain('testing');
   });
 
   it('excludes archived entries from recommendations', () => {

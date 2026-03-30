@@ -19,7 +19,7 @@ import { buildUsageStatsMap } from '../core/freshness.js';
 import { getStats, recordReceipt } from '../core/receipts.js';
 import { getTrailEntries } from '../core/links.js';
 import { commitAndPush } from '../utils/git.js';
-import { extractTags } from '../utils/tags.js';
+import { extractSignificantWords, extractTags } from '../utils/tags.js';
 import { parseTimeWindow } from '../utils/time.js';
 import type { BrainMcpContext } from './server.js';
 import type { Entry, EntryType } from '../types.js';
@@ -276,9 +276,9 @@ function registerGetRecommendations(server: McpServer, context: BrainMcpContext)
     },
     async ({ topic, limit }) => {
       try {
-        // Extract keywords: tech terms + significant words (filter stop words)
+        // Extract keywords: tech terms + significant words (stop words filtered)
         const techKeywords = extractTags(topic);
-        const words = topic.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+        const words = extractSignificantWords(topic);
         const allKeywords = [...new Set([...techKeywords, ...words])];
         const searchQuery = allKeywords.length > 0 ? allKeywords.join(' ') : topic;
 
@@ -586,29 +586,6 @@ function registerExploreTopic(server: McpServer, context: BrainMcpContext): void
       }
     },
   );
-}
-
-// --- Keyword extraction for recommendations ---
-
-const STOP_WORDS = new Set([
-  'i', 'im', 'me', 'my', 'we', 'our', 'you', 'your', 'he', 'she', 'it', 'its',
-  'they', 'them', 'this', 'that', 'these', 'those', 'a', 'an', 'the', 'and',
-  'but', 'or', 'for', 'nor', 'not', 'so', 'yet', 'to', 'of', 'in', 'on', 'at',
-  'by', 'from', 'with', 'about', 'into', 'through', 'during', 'before', 'after',
-  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
-  'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
-  'can', 'shall', 'need', 'get', 'got', 'how', 'what', 'when', 'where', 'why',
-  'which', 'who', 'whom', 'if', 'then', 'than', 'just', 'very', 'also', 'some',
-  'any', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other',
-  'no', 'up', 'out', 'off', 'over', 'under', 'again', 'here', 'there',
-]);
-
-function extractSignificantWords(text: string): string[] {
-  const words = text.toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
-  return [...new Set(words)].slice(0, 10);
 }
 
 // --- retract_entry ---
