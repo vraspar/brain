@@ -291,6 +291,7 @@ export interface SyncResult {
   added: string[];
   updated: string[];
   removed: string[];
+  pushed: boolean;
 }
 
 /**
@@ -331,7 +332,16 @@ export async function syncBrain(config: BrainConfig): Promise<SyncResult> {
   };
   saveConfig(updatedConfig);
 
-  return { added, updated, removed };
+  // Push local commits to remote
+  let pushed = false;
+  try {
+    await pushToRemote(config.local);
+    pushed = true;
+  } catch {
+    // Push failed — local commits remain unpushed
+  }
+
+  return { added, updated, removed, pushed };
 }
 
 export interface BrainStatus {

@@ -67,6 +67,7 @@ export const syncCommand = new Command('sync')
           added: result.added,
           updated: result.updated,
           removed: result.removed,
+          pushed: result.pushed,
           totalEntries: entries.length,
         }, null, 2));
       } else {
@@ -83,6 +84,9 @@ export const syncCommand = new Command('sync')
         }
         if (result.added.length === 0 && result.updated.length === 0 && result.removed.length === 0) {
           console.log(chalk.dim('   Already up to date.'));
+        }
+        if (!result.pushed) {
+          console.log(chalk.yellow('   ⚠ Push to remote failed — local commits remain unpushed.'));
         }
 
         console.log(chalk.dim(`   Total entries indexed: ${entries.length}`));

@@ -10,6 +10,23 @@ function createGit(repoPath: string): SimpleGit {
   return simpleGit(options);
 }
 
+/** Timeout (ms) for network operations: push, pull, fetch. */
+const NETWORK_TIMEOUT_MS = 15_000;
+
+/**
+ * Create a SimpleGit instance with a timeout for network operations.
+ * Use this only for push, pull, fetch, and clone — NOT for log, diff, status, etc.
+ */
+function createNetworkGit(repoPath: string): SimpleGit {
+  const options: Partial<SimpleGitOptions> = {
+    baseDir: repoPath,
+    binary: 'git',
+    maxConcurrentProcesses: 1,
+    timeout: { block: NETWORK_TIMEOUT_MS },
+  };
+  return simpleGit(options);
+}
+
 /**
  * Validate a URL is not a git flag injection attempt.
  * URLs starting with '-' would be interpreted as git options.
@@ -86,7 +103,7 @@ export async function commitAll(repoPath: string, commitMessage: string): Promis
  * so init can handle push failures gracefully.
  */
 export async function pushToRemote(repoPath: string): Promise<void> {
-  const git = createGit(repoPath);
+  const git = createNetworkGit(repoPath);
   try {
     await git.push(['-u', 'origin', 'main']);
   } catch (error) {
@@ -100,7 +117,7 @@ export async function pushToRemote(repoPath: string): Promise<void> {
  * Returns list of changed file paths.
  */
 export async function pullLatest(repoPath: string): Promise<string[]> {
-  const git = createGit(repoPath);
+  const git = createNetworkGit(repoPath);
   try {
     const result = await git.pull(['--ff-only']);
     return result.files;
@@ -115,7 +132,7 @@ export async function commitAndPush(
   files: string[],
   commitMessage: string,
   options?: { skipPush?: boolean },
-): Promise<{ pushed: boolean }> {
+): Promise<{ pushed: boolean; pushError?: string }> {
   if (files.length === 0) {
     throw new Error('No files specified to commit.');
   }
@@ -131,11 +148,13 @@ export async function commitAndPush(
   }
 
   if (!options?.skipPush) {
+    const networkGit = createNetworkGit(repoPath);
     try {
-      await git.push();
+      await networkGit.push();
       return { pushed: true };
-    } catch {
-      return { pushed: false };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { pushed: false, pushError: message };
     }
   }
   return { pushed: false };
@@ -287,5 +306,19 @@ export async function getRemoteUrl(repoPath: string): Promise<string> {
     }
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to get remote URL in "${repoPath}": ${message}`);
+  }
+}
+
+/**
+ * Count local commits not yet pushed to origin.
+ * Returns 0 if no remote is configured or on error.
+ */
+export async function getUnpushedCommitCount(repoPath: string): Promise<number> {
+  const git = createGit(repoPath);
+  try {
+    const result = await git.raw(['rev-list', '--count', 'origin/main..HEAD']);
+    return parseInt(result.trim(), 10) || 0;
+  } catch {
+    return 0;
   }
 }

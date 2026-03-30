@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig, getBrainDir } from '../core/config.js';
 import { createIndex, getDbPath, getEntriesWithFreshness, getAllEntries } from '../core/index-db.js';
+import { getUnpushedCommitCount } from '../utils/git.js';
 import type { FreshnessLabel } from '../types.js';
 
 function getDirectorySize(dirPath: string): number {
@@ -92,6 +93,11 @@ export const statusCommand = new Command('status')
           }
         }
 
+        // Unpushed commits
+        const unpushedCount = config.remote
+          ? await getUnpushedCommitCount(config.local)
+          : 0;
+
         if (format === 'json') {
           console.log(JSON.stringify({
             hubName: config.hubName ?? null,
@@ -104,6 +110,7 @@ export const statusCommand = new Command('status')
             freshness: { fresh: freshCount, aging: agingCount, stale: staleCount },
             archived: archivedCount,
             sourceRepos: [...sourceRepos],
+            unpushedCommits: unpushedCount,
             lastSync: config.lastSync ?? null,
             lastDigest: config.lastDigest ?? null,
             repoSize,
@@ -118,6 +125,10 @@ export const statusCommand = new Command('status')
             console.log(`   ${chalk.dim('Remote:')} ${config.remote}`);
           } else {
             console.log(`   ${chalk.dim('Remote:')} ${chalk.yellow('none (local-only)')}`);
+          }
+
+          if (unpushedCount > 0) {
+            console.log(chalk.yellow(`   ⚠ ${unpushedCount} local commit${unpushedCount === 1 ? '' : 's'} not yet pushed to remote`));
           }
 
           console.log(`   ${chalk.dim('Author:')} ${config.author}`);
