@@ -6,7 +6,6 @@ import { syncSource } from '../src/core/source-sync.js';
 import { createIndex } from '../src/core/index-db.js';
 import { safeCleanup } from './test-helpers.js';
 import type { SourceConfig } from '../src/types.js';
-import { safeCleanup } from './test-helpers.js';
 
 let tempDir: string;
 let brainDir: string;
