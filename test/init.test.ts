@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initBrain, extractHubName } from '../src/core/repo.js';
 import { loadConfig } from '../src/core/config.js';
+import { safeCleanup } from './test-helpers.js';
 
 let tempDir: string;
 
@@ -12,9 +13,9 @@ beforeEach(() => {
   vi.spyOn(os, 'homedir').mockReturnValue(tempDir);
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
-  fs.rmSync(tempDir, { recursive: true, force: true });
+  await safeCleanup(tempDir);
 });
 
 describe('initBrain', () => {

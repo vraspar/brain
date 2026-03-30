@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ensureRepo, getBrainStatus, joinBrain, syncBrain } from '../src/core/repo.js';
 import { saveConfig } from '../src/core/config.js';
 import type { BrainConfig } from '../src/types.js';
+import { safeCleanup } from './test-helpers.js';
 
 let tempDir: string;
 
@@ -14,9 +15,9 @@ beforeEach(() => {
   vi.spyOn(os, 'homedir').mockReturnValue(tempDir);
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
-  fs.rmSync(tempDir, { recursive: true, force: true });
+  await safeCleanup(tempDir);
 });
 
 /**

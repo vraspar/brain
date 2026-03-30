@@ -11,6 +11,7 @@ import { parseTimeWindow, relativeTime, formatDate } from '../src/utils/time.js'
 import { toSlug, slugFromPath } from '../src/utils/slug.js';
 import type { BrainConfig, DigestEntry, Entry } from '../src/types.js';
 import type Database from 'better-sqlite3';
+import { safeCleanup } from './test-helpers.js';
 
 /**
  * Integration tests verifying the full Brain CLI workflow end-to-end.
@@ -46,10 +47,10 @@ beforeEach(() => {
   db = createIndex(dbPath);
 });
 
-afterEach(() => {
+afterEach(async () => {
   db.close();
   vi.restoreAllMocks();
-  fs.rmSync(tempDir, { recursive: true, force: true });
+  await safeCleanup(tempDir);
 });
 
 describe('full workflow: create → index → search → show → receipt → stats', () => {

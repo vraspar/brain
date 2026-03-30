@@ -7,6 +7,7 @@ import { createIndex, rebuildIndex, getDbPath, getEntryById } from '../src/core/
 import { saveConfig } from '../src/core/config.js';
 import { extractTags } from '../src/utils/tags.js';
 import type { BrainConfig } from '../src/types.js';
+import { safeCleanup } from './test-helpers.js';
 
 let tempDir: string;
 let brainDir: string;
@@ -32,9 +33,9 @@ beforeEach(() => {
   saveConfig(config);
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
-  fs.rmSync(tempDir, { recursive: true, force: true });
+  await safeCleanup(tempDir);
 });
 
 // --- push --dry-run ---

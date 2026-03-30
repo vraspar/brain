@@ -14,6 +14,7 @@ import {
   pullLatest,
   pushToRemote,
 } from '../src/utils/git.js';
+import { safeCleanup } from './test-helpers.js';
 
 // We test git utility functions against real temporary git repos
 let tempDir: string;
@@ -22,8 +23,8 @@ beforeEach(() => {
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'brain-git-test-'));
 });
 
-afterEach(() => {
-  fs.rmSync(tempDir, { recursive: true, force: true });
+afterEach(async () => {
+  await safeCleanup(tempDir);
 });
 
 /**
@@ -137,6 +138,46 @@ describe('commitAndPush', () => {
   it('throws when no files specified', async () => {
     const { workDir } = await setupTestRepo();
     await expect(commitAndPush(workDir, [], 'Empty')).rejects.toThrow('No files specified');
+  });
+
+  it('returns pushed: true on successful push', async () => {
+    const { workDir } = await setupTestRepo();
+    fs.writeFileSync(path.join(workDir, 'success.md'), '# Success\n');
+
+    const result = await commitAndPush(workDir, ['success.md'], 'Add success');
+    expect(result.pushed).toBe(true);
+  });
+
+  it('returns pushed: false when push fails (unreachable remote)', async () => {
+    const { simpleGit } = await import('simple-git');
+
+    // Create a repo with an unreachable remote
+    const repoDir = path.join(tempDir, 'unreachable-repo');
+    fs.mkdirSync(repoDir);
+    const git = simpleGit(repoDir);
+    await git.init();
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+    await git.addRemote('origin', 'https://192.0.2.1/nonexistent.git');
+
+    // Create initial commit
+    fs.writeFileSync(path.join(repoDir, 'README.md'), '# Test\n');
+    await git.add('README.md');
+    await git.commit('Initial');
+
+    // Create file and try to push
+    fs.writeFileSync(path.join(repoDir, 'file.md'), '# File\n');
+    const result = await commitAndPush(repoDir, ['file.md'], 'Add file');
+
+    expect(result.pushed).toBe(false);
+  });
+
+  it('returns pushed: false when skipPush is true', async () => {
+    const { workDir } = await setupTestRepo();
+    fs.writeFileSync(path.join(workDir, 'local.md'), '# Local\n');
+
+    const result = await commitAndPush(workDir, ['local.md'], 'Add local', { skipPush: true });
+    expect(result.pushed).toBe(false);
   });
 });
 
