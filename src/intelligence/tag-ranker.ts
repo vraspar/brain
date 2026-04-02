@@ -5,6 +5,11 @@ import { extractKeyphrases } from './rake.js';
 import { KNOWN_TECH_TERMS } from '../utils/constants.js';
 
 const MAX_TAGS = 8;
+const CODE_ID_SCORE = 0.7;
+const KNOWN_TERM_SCORE = 0.3;
+const KNOWN_TERM_BOOST = 1.5;
+const RAKE_WORD_EXTRACTION_THRESHOLD = 2.0;
+const RAKE_WORD_SCORE_DECAY = 0.5;
 
 /**
  * Extract intelligent tags for a single entry.
@@ -19,6 +24,7 @@ const MAX_TAGS = 8;
 export function rankTags(
   title: string,
   content: string,
+  // Reserved for Phase 2 TF-IDF corpus lookup — callers pass db now for future compatibility
   _db: Database.Database | null,
 ): TagResult {
   const candidates: TagCandidate[] = [];
@@ -37,10 +43,10 @@ export function rankTags(
         source: 'rake',
       });
     }
-    if (kp.score > 2.0) {
+    if (kp.score > RAKE_WORD_EXTRACTION_THRESHOLD) {
       for (const word of kp.words) {
         if (word.length >= 4) {
-          candidates.push({ tag: word, score: normalizeRakeScore(kp.score) * 0.5, source: 'rake' });
+          candidates.push({ tag: word, score: normalizeRakeScore(kp.score) * RAKE_WORD_SCORE_DECAY, source: 'rake' });
         }
       }
     }
@@ -49,7 +55,7 @@ export function rankTags(
   // 3. Code identifier extraction
   const codeIds = extractCodeIdentifiers(content);
   for (const id of codeIds) {
-    candidates.push({ tag: id, score: 0.7, source: 'code_id' });
+    candidates.push({ tag: id, score: CODE_ID_SCORE, source: 'code_id' });
   }
 
   // 4. Known tech terms boost
@@ -58,9 +64,9 @@ export function rankTags(
     if (KNOWN_TECH_TERMS.has(term)) {
       const existing = candidates.find(c => c.tag === term);
       if (existing) {
-        existing.score *= 1.5;
+        existing.score *= KNOWN_TERM_BOOST;
       } else {
-        candidates.push({ tag: term, score: 0.3, source: 'keyword' });
+        candidates.push({ tag: term, score: KNOWN_TERM_SCORE, source: 'keyword' });
       }
     }
   }
