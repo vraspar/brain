@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { cloneForIngest, cloneRepo, getBatchFileModifiedDates, validateUrl } from '../utils/git.js';
 import { extractTags } from '../utils/tags.js';
+import { extractIntelligentTags } from '../intelligence/index.js';
 import { META_FILES, EXCLUDED_DIRS, BRAIN_ONLY_EXCLUDED_DIRS } from '../utils/constants.js';
 import {
   createEntry,
@@ -216,7 +217,7 @@ export async function discoverCandidates(
         title = `${parentDir} ${baseTitle}`;
       }
     }
-    const tags = parsed.tags ?? extractTags(raw);
+    const tags = parsed.tags ?? extractIntelligentTags(title, raw);
     const content = parsed.content;
 
     // Use batch-fetched date (single git log call for all files)

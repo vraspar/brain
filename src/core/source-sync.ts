@@ -10,6 +10,7 @@ import { upsertSource } from './sources.js';
 import { rowToEntry, findEntryBySourcePath, type EntryRow } from './index-db.js';
 import { parseInputContent, createEntry } from './entry.js';
 import { extractTags } from '../utils/tags.js';
+import { extractIntelligentTags } from '../intelligence/index.js';
 
 export function computeContentHash(content: string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
@@ -21,6 +22,26 @@ function validateCommitSha(sha: string): void {
   if (!COMMIT_SHA_PATTERN.test(sha)) {
     throw new Error(`Invalid commit SHA "${sha}". Expected 40-character hex string.`);
   }
+}
+
+/** List all .md files in a directory, optionally scoped to a subpath. */
+function getAllMarkdownFiles(repoDir: string, subpath?: string): string[] {
+  const baseDir = subpath ? path.join(repoDir, subpath) : repoDir;
+  if (!fs.existsSync(baseDir)) return [];
+
+  const results: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
+        walk(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        results.push(path.relative(repoDir, fullPath).replace(/\\/g, '/'));
+      }
+    }
+  };
+  walk(baseDir);
+  return results;
 }
 
 export interface SyncResult {
@@ -38,18 +59,24 @@ export async function syncSource(
   db: Database.Database,
   options: { dryRun?: boolean; force?: boolean },
 ): Promise<SyncResult> {
-  validateCommitSha(sourceConfig.lastCommit);
+  // No lastCommit means first sync or non-git source — skip SHA validation
+  if (sourceConfig.lastCommit) {
+    validateCommitSha(sourceConfig.lastCommit);
+  }
 
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), `brain-sync-${sourceName}-`));
   try {
     await cloneRepo(sourceConfig.url, tempDir, false);
     const headCommit = await getHeadCommit(tempDir);
 
-    if (headCommit === sourceConfig.lastCommit) {
+    if (sourceConfig.lastCommit && headCommit === sourceConfig.lastCommit) {
       return { added: [], updated: [], archived: [], skippedLocalEdits: [], unchanged: -1 };
     }
 
-    const changes = await getChangedFilesSince(tempDir, sourceConfig.lastCommit, sourceConfig.path);
+    // If no lastCommit, this is first sync — get all files instead of diff
+    const changes = sourceConfig.lastCommit
+      ? await getChangedFilesSince(tempDir, sourceConfig.lastCommit, sourceConfig.path)
+      : (await getAllMarkdownFiles(tempDir, sourceConfig.path)).map((p) => ({ path: p, status: 'A' as const }));
     const mdChanges = changes.filter((c) => c.path.endsWith('.md'));
 
     // Apply exclude filters
@@ -93,7 +120,7 @@ export async function syncSource(
             type: sourceConfig.type ?? parsed.type ?? 'guide',
             content: parsed.content,
             author: 'ingest',
-            tags: parsed.tags ?? extractTags(parsed.content),
+            tags: parsed.tags ?? extractIntelligentTags(title, parsed.content),
             summary: parsed.summary ?? undefined,
           });
           // Add source tracking frontmatter

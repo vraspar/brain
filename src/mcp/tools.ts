@@ -20,6 +20,7 @@ import { getStats, recordReceipt } from '../core/receipts.js';
 import { getTrailEntries } from '../core/links.js';
 import { commitAndPush } from '../utils/git.js';
 import { extractSignificantWords, extractTags } from '../utils/tags.js';
+import { extractIntelligentTags } from '../intelligence/index.js';
 import { parseTimeWindow } from '../utils/time.js';
 import type { BrainMcpContext } from './server.js';
 import type { Entry, EntryType } from '../types.js';
@@ -64,7 +65,7 @@ function registerPushKnowledge(server: McpServer, context: BrainMcpContext): voi
           content,
           type: type as EntryType,
           author: context.config.author,
-          tags: tags ?? extractTags(content),
+          tags: tags ?? extractIntelligentTags(title, content),
           summary,
         });
 
