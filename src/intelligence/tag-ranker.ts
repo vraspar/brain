@@ -5,6 +5,7 @@ import { extractKeyphrases } from './rake.js';
 import { KNOWN_TECH_TERMS } from '../utils/constants.js';
 
 const MAX_TAGS = 8;
+const MAX_TAG_WORDS = 3;
 const CODE_ID_SCORE = 0.7;
 const KNOWN_TERM_SCORE = 0.3;
 const KNOWN_TERM_BOOST = 1.5;
@@ -36,7 +37,7 @@ export function rankTags(
   const keyphrases = extractKeyphrases(content);
   for (const kp of keyphrases.slice(0, 10)) {
     const tag = kp.words.join('-');
-    if (tag.length >= 3 && tag.length <= 40) {
+    if (tag.length >= 3 && tag.length <= 40 && kp.words.length <= MAX_TAG_WORDS) {
       candidates.push({
         tag,
         score: normalizeRakeScore(kp.score),
