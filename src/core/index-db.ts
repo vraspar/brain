@@ -4,6 +4,7 @@ import Database from 'better-sqlite3';
 import type { Entry, FreshnessScore, SearchResult } from '../types.js';
 import { computeFreshness, type UsageStats } from './freshness.js';
 import { computeEntryLinks } from './links.js';
+import { STOP_WORDS } from '../utils/constants.js';
 
 /**
  * Returns the default path for the brain cache database: ~/.brain/cache.db
@@ -163,11 +164,14 @@ function sanitizeFtsQuery(query: string): string {
     .split(/\s+/)
     .filter(Boolean);
 
-  if (cleaned.length === 0) return '';
+  // Filter stop words to prevent noise from natural language queries
+  const meaningful = cleaned.filter((term) => !STOP_WORDS.has(term.toLowerCase()));
+
+  if (meaningful.length === 0) return '';
 
   // Wrap each term in double quotes with * suffix for prefix matching
   // "kube"* matches "kubernetes", "docker"* matches "dockerfile"
-  return cleaned.map((term) => `"${term}"*`).join(' ');
+  return meaningful.map((term) => `"${term}"*`).join(' ');
 }
 
 export function searchEntries(db: Database.Database, query: string, limit = 20): Entry[] {
@@ -304,23 +308,22 @@ export function resolveEntryId(db: Database.Database, partialId: string): Resolv
   const allEntries = getAllEntries(db);
   const prefixMatches = allEntries.filter((e) => e.id.startsWith(partialId));
   if (prefixMatches.length === 1) return { entry: prefixMatches[0], exactMatch: false };
-
-  // 3. includes match (fallback)
-  if (prefixMatches.length === 0) {
-    const containsMatches = allEntries.filter((e) => e.id.includes(partialId));
-    if (containsMatches.length === 1) return { entry: containsMatches[0], exactMatch: false };
-    if (containsMatches.length > 1) {
-      const ids = containsMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
-      throw new Error(
-        `Ambiguous ID "${partialId}" matches ${containsMatches.length} entries:\n${ids}\nBe more specific.`,
-      );
-    }
-  }
-
   if (prefixMatches.length > 1) {
     const ids = prefixMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
+    const more = prefixMatches.length > 5 ? `\n  ... and ${prefixMatches.length - 5} more` : '';
     throw new Error(
-      `Ambiguous ID "${partialId}" matches ${prefixMatches.length} entries:\n${ids}\nBe more specific.`,
+      `Ambiguous ID "${partialId}" matches ${prefixMatches.length} entries:\n${ids}${more}\nBe more specific.`,
+    );
+  }
+
+  // 3. includes match (fallback) — only if no prefix matches
+  const containsMatches = allEntries.filter((e) => e.id.includes(partialId));
+  if (containsMatches.length === 1) return { entry: containsMatches[0], exactMatch: false };
+  if (containsMatches.length > 1) {
+    const ids = containsMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
+    const more = containsMatches.length > 5 ? `\n  ... and ${containsMatches.length - 5} more` : '';
+    throw new Error(
+      `Ambiguous ID "${partialId}" matches ${containsMatches.length} entries:\n${ids}${more}\nBe more specific.`,
     );
   }
 

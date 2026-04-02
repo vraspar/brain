@@ -218,6 +218,24 @@ describe('searchEntries', () => {
     expect(searchEntries(db, '   ')).toEqual([]);
   });
 
+  it('returns empty for all-stop-words query', () => {
+    const results = searchEntries(db, 'what is the best way');
+    expect(results).toEqual([]);
+  });
+
+  it('returns empty for pure question stop words', () => {
+    const results = searchEntries(db, 'how do I find this');
+    expect(results).toEqual([]);
+  });
+
+  it('filters stop words but keeps meaningful terms', () => {
+    // 'what' and 'is' are stop words, 'kubernetes' is meaningful
+    // After filtering, only 'kubernetes' remains — same as a direct search
+    const directResults = searchEntries(db, 'kubernetes');
+    const filteredResults = searchEntries(db, 'what is kubernetes');
+    expect(filteredResults.length).toBe(directResults.length);
+  });
+
   it('returns empty array for no matches', () => {
     const results = searchEntries(db, 'xyznonexistent');
     expect(results).toHaveLength(0);
@@ -387,17 +405,34 @@ describe('resolveEntryId', () => {
     expect(exactMatch).toBe(false);
   });
 
-  it('throws for ambiguous contains match', () => {
-    // 'pipeline' prefix-matches 'ci-pipeline-skill', but let's test ambiguity
-    // Both 'k8s-deployment' and 'ci-pipeline-skill' contain 'i' — too broad
-    // Use a pattern that matches exactly two: 'python' and 'pipeline' both contain 'p'
-    // Actually, just test the error for not-found
-    expect(() => resolveEntryId(db, 'xyznonexistent')).toThrow('not found');
+  it('throws for ambiguous prefix match with list of candidates', () => {
+    const entriesWithSharedPrefix = [
+      ...sampleEntries,
+      makeEntry({ id: 'ci-setup-guide', title: 'CI Setup', content: 'CI guide', filePath: 'guides/ci-setup.md' }),
+    ];
+    rebuildIndex(db, entriesWithSharedPrefix);
+    expect(() => resolveEntryId(db, 'ci')).toThrow('Ambiguous');
+    expect(() => resolveEntryId(db, 'ci')).toThrow('ci-pipeline-skill');
+    expect(() => resolveEntryId(db, 'ci')).toThrow('ci-setup-guide');
+  });
+
+  it('throws for ambiguous contains match with list of candidates', () => {
+    const entriesWithSharedSubstring = [
+      ...sampleEntries,
+      makeEntry({ id: 'learn-fastapi-basics', title: 'Learn FastAPI', content: 'FastAPI basics', filePath: 'guides/learn-fastapi.md' }),
+    ];
+    rebuildIndex(db, entriesWithSharedSubstring);
+    expect(() => resolveEntryId(db, 'fastapi')).toThrow('Ambiguous');
+    expect(() => resolveEntryId(db, 'fastapi')).toThrow('2 entries');
   });
 
   it('resolves single contains match', () => {
-    // 'testing' is contained in 'react-testing'
     const { entry } = resolveEntryId(db, 'testing');
+    expect(entry.id).toBe('react-testing');
+  });
+
+  it('prefers prefix match over contains match', () => {
+    const { entry } = resolveEntryId(db, 'react');
     expect(entry.id).toBe('react-testing');
   });
 
