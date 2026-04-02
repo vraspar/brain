@@ -80,12 +80,18 @@ export function extractCodeIdentifiers(content: string): string[] {
 
   const identifiers = new Set<string>();
 
+  // PascalCase: InferenceSession, GptqQuantizer
   const pascal = allCode.match(/[A-Z][a-z]+(?:[A-Z][a-z0-9]+)+/g) ?? [];
-  const camel = allCode.match(/[a-z]+(?:[A-Z][a-z0-9]+)+/g) ?? [];
+  // camelCase at word boundary only (avoids matching substrings of PascalCase)
+  const camel = allCode.match(/\b[a-z][a-z0-9]+(?:[A-Z][a-z0-9]+)+/g) ?? [];
 
   for (const id of [...pascal, ...camel]) {
     if (id.length >= 6) {
-      const kebab = id.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      // Two-pass split: handles ACRONYM+Word (e.g. CUDAExecution) and camelCase
+      const kebab = id
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+        .toLowerCase();
       identifiers.add(kebab);
     }
   }
