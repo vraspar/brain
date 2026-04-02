@@ -300,35 +300,40 @@ export interface ResolveResult {
  * Returns the entry if exactly one match, throws with suggestions if ambiguous.
  */
 export function resolveEntryId(db: Database.Database, partialId: string): ResolveResult {
+  const trimmed = partialId.trim();
+  if (trimmed.length < 2) {
+    throw new Error('Entry ID must be at least 2 characters. Be more specific.');
+  }
+
   // 1. Exact match
-  const exact = getEntryById(db, partialId);
+  const exact = getEntryById(db, trimmed);
   if (exact) return { entry: exact, exactMatch: true };
 
   // 2. startsWith match
   const allEntries = getAllEntries(db);
-  const prefixMatches = allEntries.filter((e) => e.id.startsWith(partialId));
+  const prefixMatches = allEntries.filter((e) => e.id.startsWith(trimmed));
   if (prefixMatches.length === 1) return { entry: prefixMatches[0], exactMatch: false };
   if (prefixMatches.length > 1) {
     const ids = prefixMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
     const more = prefixMatches.length > 5 ? `\n  ... and ${prefixMatches.length - 5} more` : '';
     throw new Error(
-      `Ambiguous ID "${partialId}" matches ${prefixMatches.length} entries:\n${ids}${more}\nBe more specific.`,
+      `Ambiguous ID "${trimmed}" matches ${prefixMatches.length} entries:\n${ids}${more}\nBe more specific.`,
     );
   }
 
   // 3. includes match (fallback) — only if no prefix matches
-  const containsMatches = allEntries.filter((e) => e.id.includes(partialId));
+  const containsMatches = allEntries.filter((e) => e.id.includes(trimmed));
   if (containsMatches.length === 1) return { entry: containsMatches[0], exactMatch: false };
   if (containsMatches.length > 1) {
     const ids = containsMatches.slice(0, 5).map((e) => `  • ${e.id}`).join('\n');
     const more = containsMatches.length > 5 ? `\n  ... and ${containsMatches.length - 5} more` : '';
     throw new Error(
-      `Ambiguous ID "${partialId}" matches ${containsMatches.length} entries:\n${ids}${more}\nBe more specific.`,
+      `Ambiguous ID "${trimmed}" matches ${containsMatches.length} entries:\n${ids}${more}\nBe more specific.`,
     );
   }
 
   throw new Error(
-    `Entry "${partialId}" not found. Run "brain search" to find entries, or "brain list" to see all.`,
+    `Entry "${trimmed}" not found. Run "brain search" to find entries, or "brain list" to see all.`,
   );
 }
 

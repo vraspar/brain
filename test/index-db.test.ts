@@ -439,4 +439,10 @@ describe('resolveEntryId', () => {
   it('throws for nonexistent entry', () => {
     expect(() => resolveEntryId(db, 'xyznonexistent')).toThrow('not found');
   });
+
+  it('rejects empty or single-char partial IDs', () => {
+    expect(() => resolveEntryId(db, '')).toThrow('at least 2 characters');
+    expect(() => resolveEntryId(db, 'x')).toThrow('at least 2 characters');
+    expect(() => resolveEntryId(db, ' ')).toThrow('at least 2 characters');
+  });
 });
