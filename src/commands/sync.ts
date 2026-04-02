@@ -103,3 +103,93 @@ export const syncCommand = new Command('sync')
       process.exitCode = 1;
     }
   });
+
+interface RetagChange {
+  id: string;
+  oldTags: string[];
+  newTags: string[];
+}
+
+/**
+ * Re-extract tags for entries that only have dictionary-based or empty tags.
+ * Writes updated frontmatter to disk and commits changes.
+ */
+async function retagEntries(
+  brainRepoPath: string,
+  format: string,
+  log: ReturnType<typeof createLogger>,
+): Promise<{ count: number; changes: RetagChange[] }> {
+  const db = createIndex(getDbPath());
+  try {
+    const entries = getAllEntries(db);
+    const changes: RetagChange[] = [];
+    const changedFiles: string[] = [];
+
+    for (const entry of entries) {
+      // Only retag entries with empty tags or all tags from KNOWN_TECH_TERMS
+      const hasOnlyDictTags = entry.tags.length === 0 ||
+        entry.tags.every(t => KNOWN_TECH_TERMS.has(t.toLowerCase()));
+
+      if (!hasOnlyDictTags) continue;
+
+      const newTags = extractIntelligentTags(entry.title, entry.content);
+      if (newTags.length === 0) continue;
+
+      // Skip if tags are identical
+      const oldSorted = [...entry.tags].sort().join(',');
+      const newSorted = [...newTags].sort().join(',');
+      if (oldSorted === newSorted) continue;
+
+      // Update frontmatter on disk
+      const fullPath = path.join(brainRepoPath, entry.filePath);
+      if (!fs.existsSync(fullPath)) continue;
+
+      const raw = fs.readFileSync(fullPath, 'utf-8');
+      const parsed = matter(raw);
+      parsed.data.tags = newTags;
+      fs.writeFileSync(fullPath, matter.stringify(parsed.content, parsed.data), 'utf-8');
+
+      changes.push({ id: entry.id, oldTags: entry.tags, newTags });
+      changedFiles.push(entry.filePath);
+    }
+
+    if (changes.length > 0) {
+      // Rebuild index with new tags
+      const updatedEntries = await scanEntries(brainRepoPath);
+      rebuildIndex(db, updatedEntries);
+
+      // Commit retagged files
+      try {
+        await commitAndPush(
+          brainRepoPath,
+          changedFiles,
+          `retag ${changes.length} entries with intelligent extraction`,
+          { skipPush: false },
+        );
+      } catch {
+        // Push may fail — entries are still retagged locally
+      }
+
+      // Display before→after diffs
+      if (format !== 'json') {
+        log.info('');
+        log.success(`🔄 Retagged ${changes.length}/${entries.length} entries`);
+        for (const change of changes.slice(0, 5)) {
+          const oldStr = change.oldTags.length > 0 ? change.oldTags.join(', ') : '(none)';
+          log.info(`   ${chalk.dim(change.id)}`);
+          log.info(`     ${chalk.red('- ' + oldStr)}`);
+          log.info(`     ${chalk.green('+ ' + change.newTags.join(', '))}`);
+        }
+        if (changes.length > 5) {
+          log.info(chalk.dim(`   ... and ${changes.length - 5} more`));
+        }
+      }
+    } else if (format !== 'json') {
+      log.info(chalk.dim('   No entries needed retagging.'));
+    }
+
+    return { count: changes.length, changes };
+  } finally {
+    db.close();
+  }
+}

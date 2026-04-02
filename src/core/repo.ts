@@ -334,12 +334,14 @@ export async function syncBrain(config: BrainConfig): Promise<SyncResult> {
     return !added.includes(f) && !removed.includes(f);
   });
 
-  // Update config with sync timestamp
-  const updatedConfig: BrainConfig = {
-    ...config,
-    lastSync: new Date().toISOString(),
-  };
-  saveConfig(updatedConfig);
+  // Only update lastSync when pull succeeded (stale timestamp = user knows to retry)
+  if (!pullError) {
+    const updatedConfig: BrainConfig = {
+      ...config,
+      lastSync: new Date().toISOString(),
+    };
+    saveConfig(updatedConfig);
+  }
 
   // Push local commits to remote (independent of pull outcome)
   let pushed = false;
