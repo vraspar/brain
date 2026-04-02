@@ -197,6 +197,49 @@ describe('tool handler logic', () => {
       expect(entry.tags).toEqual(['new', 'test']);
       expect(entry.status).toBe('active');
     });
+
+    it('auto-extracts tags from content when tags are omitted', () => {
+      // Simulates the MCP push_knowledge path: tags param is undefined
+      const content = 'How to deploy a React app to Kubernetes using Docker and Terraform';
+      const tags = undefined;
+      const resolvedTags = tags ?? extractTags(content);
+
+      expect(resolvedTags.length).toBeGreaterThan(0);
+      expect(resolvedTags).toContain('react');
+      expect(resolvedTags).toContain('kubernetes');
+      expect(resolvedTags).toContain('docker');
+      expect(resolvedTags).toContain('terraform');
+
+      const entry = createEntry({
+        title: 'Deploy React to K8s',
+        content,
+        type: 'guide',
+        author: 'alice',
+        tags: resolvedTags,
+      });
+
+      expect(entry.tags.length).toBeGreaterThan(0);
+      expect(entry.tags).toContain('react');
+    });
+
+    it('uses provided tags when explicitly given', () => {
+      const content = 'How to deploy a React app to Kubernetes';
+      const tags = ['custom-tag', 'my-tag'];
+      const resolvedTags = tags ?? extractTags(content);
+
+      // Should use the explicit tags, not auto-extracted ones
+      expect(resolvedTags).toEqual(['custom-tag', 'my-tag']);
+      expect(resolvedTags).not.toContain('react');
+    });
+
+    it('returns empty tags for content with no known tech terms', () => {
+      const content = 'A guide about making better decisions in meetings';
+      const tags = undefined;
+      const resolvedTags = tags ?? extractTags(content);
+
+      // extractTags only matches known tech terms — generic content gets no tags
+      expect(resolvedTags).toEqual([]);
+    });
   });
 });
 
@@ -253,6 +296,53 @@ describe('MCP server integration', () => {
     await recordReceipt(tempDir, entry!.id, context.config.author, 'mcp');
     const stats = getEntryStats(tempDir, 'react-testing', '7d');
     expect(stats.accessCount).toBe(1);
+  });
+});
+
+// ─── list_entries tag filter logic (BUG-6 verification) ───
+
+describe('list_entries tag filter logic', () => {
+  it('filters entries by tag with case-insensitive match', () => {
+    const allEntries = getAllEntries(db).filter((e) => e.status !== 'archived');
+    const tag = 'kubernetes';
+    const lowerTag = tag.toLowerCase();
+    const filtered = allEntries.filter((e) => e.tags.some((t) => t.toLowerCase() === lowerTag));
+
+    expect(filtered.length).toBeGreaterThanOrEqual(1);
+    expect(filtered[0].id).toBe('k8s-deployment');
+  });
+
+  it('returns empty when filtering by tag that no entry has', () => {
+    const allEntries = getAllEntries(db).filter((e) => e.status !== 'archived');
+    const tag = 'nonexistent-tag';
+    const lowerTag = tag.toLowerCase();
+    const filtered = allEntries.filter((e) => e.tags.some((t) => t.toLowerCase() === lowerTag));
+
+    expect(filtered).toHaveLength(0);
+  });
+
+  it('finds auto-tagged entries after MCP push (BUG-6 root cause)', () => {
+    // Simulate an entry created via MCP with auto-extracted tags
+    const content = 'Setting up Docker containers for a Python microservice';
+    const autoTags = extractTags(content);
+    expect(autoTags).toContain('docker');
+    expect(autoTags).toContain('python');
+
+    const entry = makeEntry({
+      id: 'docker-python-guide',
+      title: 'Docker Python Microservice',
+      tags: autoTags,
+      content,
+      filePath: 'guides/docker-python-guide.md',
+    });
+
+    // Add to index and verify tag filter finds it
+    rebuildIndex(db, [...sampleEntries, entry]);
+    const allEntries = getAllEntries(db).filter((e) => e.status !== 'archived');
+    const lowerTag = 'docker';
+    const filtered = allEntries.filter((e) => e.tags.some((t) => t.toLowerCase() === lowerTag));
+
+    expect(filtered.some((e) => e.id === 'docker-python-guide')).toBe(true);
   });
 });
 

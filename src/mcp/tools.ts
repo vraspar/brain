@@ -64,7 +64,7 @@ function registerPushKnowledge(server: McpServer, context: BrainMcpContext): voi
           content,
           type: type as EntryType,
           author: context.config.author,
-          tags,
+          tags: tags ?? extractTags(content),
           summary,
         });
 
