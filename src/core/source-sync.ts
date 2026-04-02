@@ -59,7 +59,15 @@ export async function syncSource(
   db: Database.Database,
   options: { dryRun?: boolean; force?: boolean },
 ): Promise<SyncResult> {
-  // No lastCommit means first sync or non-git source — skip SHA validation
+  // Non-git local sources have no commit history — nothing to sync
+  const isGitUrl = sourceConfig.url.startsWith('http') ||
+    sourceConfig.url.startsWith('git@') ||
+    sourceConfig.url.endsWith('.git');
+  if (!sourceConfig.lastCommit && !isGitUrl) {
+    return { added: [], updated: [], archived: [], skippedLocalEdits: [], unchanged: 0 };
+  }
+
+  // Validate SHA if present
   if (sourceConfig.lastCommit) {
     validateCommitSha(sourceConfig.lastCommit);
   }
