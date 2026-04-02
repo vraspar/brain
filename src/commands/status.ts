@@ -94,9 +94,9 @@ export const statusCommand = new Command('status')
         }
 
         // Unpushed commits
-        const unpushedCount = config.remote
+        const unpushedResult = config.remote
           ? await getUnpushedCommitCount(config.local)
-          : 0;
+          : { count: 0, noUpstream: false };
 
         if (format === 'json') {
           console.log(JSON.stringify({
@@ -110,7 +110,8 @@ export const statusCommand = new Command('status')
             freshness: { fresh: freshCount, aging: agingCount, stale: staleCount },
             archived: archivedCount,
             sourceRepos: [...sourceRepos],
-            unpushedCommits: unpushedCount,
+            unpushedCommits: unpushedResult.count,
+            noUpstreamTracking: unpushedResult.noUpstream,
             lastSync: config.lastSync ?? null,
             lastDigest: config.lastDigest ?? null,
             repoSize,
@@ -127,8 +128,10 @@ export const statusCommand = new Command('status')
             console.log(`   ${chalk.dim('Remote:')} ${chalk.yellow('none (local-only)')}`);
           }
 
-          if (unpushedCount > 0) {
-            console.log(chalk.yellow(`   ⚠ ${unpushedCount} local commit${unpushedCount === 1 ? '' : 's'} not yet pushed to remote`));
+          if (unpushedResult.noUpstream) {
+            console.log(chalk.yellow('   ⚠ No remote tracking branch — run "brain sync" to push'));
+          } else if (unpushedResult.count > 0) {
+            console.log(chalk.yellow(`   ⚠ ${unpushedResult.count} local commit${unpushedResult.count === 1 ? '' : 's'} not yet pushed to remote`));
           }
 
           console.log(`   ${chalk.dim('Author:')} ${config.author}`);

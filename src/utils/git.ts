@@ -175,20 +175,6 @@ export async function getLastCommitDate(repoPath: string): Promise<Date> {
 }
 
 /**
- * Get the last modified date of a specific file from git history.
- * Returns undefined if the file has no git history (e.g., shallow clone).
- */
-export async function getFileLastModified(repoPath: string, filePath: string): Promise<Date | undefined> {
-  const git = createGit(repoPath);
-  try {
-    const log = await git.log({ file: filePath, maxCount: 1 });
-    return log.latest ? new Date(log.latest.date) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * Clone a repo using partial clone (treeless) for ingest.
  * Downloads tree metadata but fetches file content on demand.
  * Much faster than full clone for large repos (~50MB vs 2GB).
@@ -309,16 +295,29 @@ export async function getRemoteUrl(repoPath: string): Promise<string> {
   }
 }
 
+export interface UnpushedResult {
+  count: number;
+  noUpstream: boolean;
+}
+
 /**
  * Count local commits not yet pushed to origin.
- * Returns 0 if no remote is configured or on error.
+ * Returns {count, noUpstream} so callers can distinguish between
+ * "0 unpushed commits" and "no upstream tracking branch exists".
  */
-export async function getUnpushedCommitCount(repoPath: string): Promise<number> {
+export async function getUnpushedCommitCount(repoPath: string): Promise<UnpushedResult> {
   const git = createGit(repoPath);
   try {
+    // Check if the upstream branch exists
+    await git.raw(['rev-parse', '--verify', 'origin/main']);
     const result = await git.raw(['rev-list', '--count', 'origin/main..HEAD']);
-    return parseInt(result.trim(), 10) || 0;
-  } catch {
-    return 0;
+    return { count: parseInt(result.trim(), 10) || 0, noUpstream: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    // "unknown revision" or "Needed a single revision" = no upstream branch
+    if (message.includes('unknown revision') || message.includes('Needed a single revision')) {
+      return { count: 0, noUpstream: true };
+    }
+    return { count: 0, noUpstream: false };
   }
 }

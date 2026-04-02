@@ -10,6 +10,7 @@ import {
   getCurrentUser,
   getLastCommitDate,
   getRemoteUrl,
+  getUnpushedCommitCount,
   initRepo,
   pullLatest,
   pushToRemote,
@@ -341,4 +342,58 @@ describe('pushToRemote', () => {
 
     await expect(pushToRemote(repoDir)).rejects.toThrow('Failed to push');
   });
+});
+
+describe('getUnpushedCommitCount', () => {
+  it('returns noUpstream when repo has no remote tracking', async () => {
+    const repoDir = path.join(tempDir, 'local-only');
+    await initRepo(repoDir);
+
+    const { simpleGit } = await import('simple-git');
+    const git = simpleGit(repoDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+    fs.writeFileSync(path.join(repoDir, 'file.txt'), 'hello', 'utf-8');
+    await commitAll(repoDir, 'Initial commit');
+
+    const result = await getUnpushedCommitCount(repoDir);
+    expect(result.noUpstream).toBe(true);
+    expect(result.count).toBe(0);
+  });
+
+  it('counts unpushed commits when upstream exists', async () => {
+    const { simpleGit } = await import('simple-git');
+    const bareDir = path.join(tempDir, 'bare.git');
+    fs.mkdirSync(bareDir);
+    await simpleGit(bareDir).init(true);
+
+    const workDir = path.join(tempDir, 'work');
+    await simpleGit().clone(bareDir, workDir);
+    const git = simpleGit(workDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+
+    // Initial push to create upstream
+    fs.writeFileSync(path.join(workDir, 'a.txt'), 'a', 'utf-8');
+    await git.add('.');
+    await git.commit('first');
+    await git.push('origin', 'main');
+
+    // Verify 0 unpushed
+    const result0 = await getUnpushedCommitCount(workDir);
+    expect(result0.count).toBe(0);
+    expect(result0.noUpstream).toBe(false);
+
+    // Create 2 unpushed commits
+    fs.writeFileSync(path.join(workDir, 'b.txt'), 'b', 'utf-8');
+    await git.add('.');
+    await git.commit('second');
+    fs.writeFileSync(path.join(workDir, 'c.txt'), 'c', 'utf-8');
+    await git.add('.');
+    await git.commit('third');
+
+    const result2 = await getUnpushedCommitCount(workDir);
+    expect(result2.count).toBe(2);
+    expect(result2.noUpstream).toBe(false);
+  }, 30_000);
 });
