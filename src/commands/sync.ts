@@ -1,16 +1,23 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Command } from 'commander';
 import chalk from 'chalk';
+import matter from 'gray-matter';
 import { loadConfig } from '../core/config.js';
 import { syncBrain } from '../core/repo.js';
 import { scanEntries } from '../core/entry.js';
-import { createIndex, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
+import { createIndex, getAllEntries, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
 import { buildUsageStatsMap } from '../core/freshness.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
 import { createLogger } from '../utils/log.js';
+import { KNOWN_TECH_TERMS } from '../utils/constants.js';
+import { extractIntelligentTags } from '../intelligence/index.js';
+import { commitAndPush } from '../utils/git.js';
 
 export const syncCommand = new Command('sync')
   .description('Pull latest changes and rebuild the index')
-  .action(async () => {
+  .option('--retag', 'Re-extract tags using intelligent tagging for entries with generic tags')
+  .action(async (options: { retag?: boolean }) => {
     const format = syncCommand.parent?.opts().format ?? 'text';
     const log = createLogger(syncCommand.parent?.opts().quiet);
 
@@ -31,11 +38,17 @@ export const syncCommand = new Command('sync')
           db.close();
         }
 
+        // Retag entries with intelligent tagging if requested
+        const retagResult = options.retag
+          ? await retagEntries(config.local, format, log)
+          : undefined;
+
         if (format === 'json') {
           log.data(JSON.stringify({
             status: 'synced-local',
             totalEntries: entries.length,
             message: 'No remote configured. Index rebuilt locally.',
+            ...(retagResult ? { retagged: retagResult.count } : {}),
           }, null, 2));
         } else {
           log.success(chalk.green('✅ Index rebuilt locally.'));
@@ -63,17 +76,29 @@ export const syncCommand = new Command('sync')
         db.close();
       }
 
+      // Retag entries with intelligent tagging if requested
+      const retagResult = options.retag
+        ? await retagEntries(config.local, format, log)
+        : undefined;
+
       if (format === 'json') {
         log.data(JSON.stringify({
-          status: 'synced',
+          status: result.pullError ? 'partial' : 'synced',
           added: result.added,
           updated: result.updated,
           removed: result.removed,
           pushed: result.pushed,
+          pullError: result.pullError ?? null,
           totalEntries: entries.length,
+          ...(retagResult ? { retagged: retagResult.count } : {}),
         }, null, 2));
       } else {
-        log.success(chalk.green('✅ Brain synced successfully.'));
+        if (result.pullError) {
+          log.warn(chalk.yellow('⚠ Brain sync partially completed.'));
+          log.warn(chalk.yellow(`   Pull failed: ${result.pullError}`));
+        } else {
+          log.success(chalk.green('✅ Brain synced successfully.'));
+        }
 
         if (result.added.length > 0) {
           log.info(chalk.green(`   ✨ ${result.added.length} new: ${result.added.join(', ')}`));
@@ -84,7 +109,7 @@ export const syncCommand = new Command('sync')
         if (result.removed.length > 0) {
           log.info(chalk.yellow(`   🗑️  ${result.removed.length} removed: ${result.removed.join(', ')}`));
         }
-        if (result.added.length === 0 && result.updated.length === 0 && result.removed.length === 0) {
+        if (!result.pullError && result.added.length === 0 && result.updated.length === 0 && result.removed.length === 0) {
           log.info(chalk.dim('   Already up to date.'));
         }
         if (!result.pushed) {
