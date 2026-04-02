@@ -27,6 +27,7 @@ export const listCommand = new Command('list')
   .option('--fresh', 'Show only fresh entries (🟢)')
   .action(async (options: ListOptions) => {
     const format = listCommand.parent?.opts().format ?? 'text';
+    const quiet = listCommand.parent?.opts().quiet ?? false;
 
     try {
       const config = loadConfig();
@@ -113,7 +114,7 @@ export const listCommand = new Command('list')
         db.close();
       }
 
-      console.log(formatSearchResults(entries, { format, freshness: freshnessMap }));
+      console.log(formatSearchResults(entries, { format, freshness: freshnessMap, quiet }));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {

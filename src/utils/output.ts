@@ -6,6 +6,7 @@ import { freshnessIndicator } from '../core/freshness.js';
 
 export interface FormatOptions {
   format?: 'text' | 'json';
+  quiet?: boolean;
 }
 
 const MAX_TITLE_LENGTH = 40;
@@ -159,6 +160,7 @@ export function formatSearchResults(
   }
 
   if (entries.length === 0) {
+    if (options.quiet) return '';
     return chalk.dim('No matching entries found.');
   }
 
@@ -213,5 +215,8 @@ export function formatSearchResults(
     table.push(row);
   }
 
+  if (options.quiet) {
+    return table.toString();
+  }
   return `${chalk.bold(`Found ${entries.length} result${entries.length === 1 ? '' : 's'}:`)}\n${table.toString()}`;
 }

@@ -139,4 +139,25 @@ describe('formatSearchResults', () => {
     const parsed = JSON.parse(output);
     expect(Array.isArray(parsed)).toBe(true);
   });
+
+  it('suppresses header but keeps table when quiet', () => {
+    const entries = [makeEntry({ title: 'Quiet Entry' })];
+    const output = formatSearchResults(entries, { quiet: true });
+    expect(output).toContain('Quiet Entry');
+    expect(output).not.toContain('Found');
+    expect(output).not.toContain('result');
+  });
+
+  it('returns empty string for no results when quiet', () => {
+    const output = formatSearchResults([], { quiet: true });
+    expect(output).toBe('');
+  });
+
+  it('quiet does not affect JSON output', () => {
+    const entries = [makeEntry()];
+    const output = formatSearchResults(entries, { format: 'json', quiet: true });
+    const parsed = JSON.parse(output);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed[0].title).toBe('Test Entry');
+  });
 });

@@ -51,6 +51,7 @@ export const searchCommand = new Command('search')
   .option('--no-interactive', 'Skip the selection prompt')
   .action(async (query: string, options: { limit: string; preview: boolean; interactive: boolean }) => {
     const format = searchCommand.parent?.opts().format ?? 'text';
+    const quiet = searchCommand.parent?.opts().quiet ?? false;
 
     try {
       const config = loadConfig();
@@ -69,7 +70,7 @@ export const searchCommand = new Command('search')
           ? new Map(results.map((r) => [r.entry.id, r.snippet]))
           : undefined;
 
-        console.log(formatSearchResults(entries, { format, snippets }));
+        console.log(formatSearchResults(entries, { format, snippets, quiet }));
 
         // Interactive selection (text mode only, TTY only)
         if (format !== 'json' && options.interactive && entries.length > 0) {
