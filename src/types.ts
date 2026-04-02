@@ -95,7 +95,7 @@ export interface SourceConfig {
   url: string;
   path?: string;
   exclude?: string[];
-  lastCommit: string;
+  lastCommit?: string;
   lastSync: string;
   entryCount: number;
   type?: EntryType;
