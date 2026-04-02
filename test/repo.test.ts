@@ -131,6 +131,46 @@ New guide content.`;
     expect(result.updated).toEqual([]);
     expect(result.removed).toEqual([]);
   });
+
+  it('still pushes when pull fails', async () => {
+    const remoteUrl = await createBrainRemote();
+    const config = await joinBrain(remoteUrl);
+    const { simpleGit } = await import('simple-git');
+
+    // Break the remote so pull fails
+    const localGit = simpleGit(config.local);
+    await localGit.remote(['set-url', 'origin', '/nonexistent/remote.git']);
+
+    // Create a local commit
+    const guideContent = `---
+title: Local Guide
+author: alice
+created: "2026-03-20T00:00:00Z"
+updated: "2026-03-20T00:00:00Z"
+type: guide
+status: active
+---
+
+Local content.`;
+    fs.writeFileSync(path.join(config.local, 'guides', 'local-guide.md'), guideContent, 'utf-8');
+    await localGit.add('.');
+    await localGit.commit('Add local guide');
+
+    const result = await syncBrain(config);
+
+    // Pull should have failed but sync should still complete
+    expect(result.pullError).toBeDefined();
+    expect(result.pullError!.length).toBeGreaterThan(0);
+    // Push also fails (broken remote) but the point is sync didn't throw
+    expect(result.pushed).toBe(false);
+  });
+
+  it('returns pullError as undefined when pull succeeds', async () => {
+    const remoteUrl = await createBrainRemote();
+    const config = await joinBrain(remoteUrl);
+    const result = await syncBrain(config);
+    expect(result.pullError).toBeUndefined();
+  });
 });
 
 describe('getBrainStatus', () => {

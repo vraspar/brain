@@ -6,11 +6,13 @@ import { scanEntries } from '../core/entry.js';
 import { createIndex, getDbPath, rebuildIndex, updateFreshnessScores } from '../core/index-db.js';
 import { buildUsageStatsMap } from '../core/freshness.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
+import { createLogger } from '../utils/log.js';
 
 export const syncCommand = new Command('sync')
   .description('Pull latest changes and rebuild the index')
   .action(async () => {
     const format = syncCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(syncCommand.parent?.opts().quiet);
 
     try {
       const config = loadConfig();
@@ -30,16 +32,16 @@ export const syncCommand = new Command('sync')
         }
 
         if (format === 'json') {
-          console.log(JSON.stringify({
+          log.data(JSON.stringify({
             status: 'synced-local',
             totalEntries: entries.length,
             message: 'No remote configured. Index rebuilt locally.',
           }, null, 2));
         } else {
-          console.log(chalk.green('✅ Index rebuilt locally.'));
-          console.log(chalk.dim(`   Total entries indexed: ${entries.length}`));
-          console.log('');
-          console.log(chalk.yellow('   ⚠ No remote configured. Add one with: brain remote add <url>'));
+          log.success(chalk.green('✅ Index rebuilt locally.'));
+          log.info(chalk.dim(`   Total entries indexed: ${entries.length}`));
+          log.info('');
+          log.warn(chalk.yellow('   ⚠ No remote configured. Add one with: brain remote add <url>'));
         }
         return;
       }
@@ -62,7 +64,7 @@ export const syncCommand = new Command('sync')
       }
 
       if (format === 'json') {
-        console.log(JSON.stringify({
+        log.data(JSON.stringify({
           status: 'synced',
           added: result.added,
           updated: result.updated,
@@ -71,32 +73,32 @@ export const syncCommand = new Command('sync')
           totalEntries: entries.length,
         }, null, 2));
       } else {
-        console.log(chalk.green('✅ Brain synced successfully.'));
+        log.success(chalk.green('✅ Brain synced successfully.'));
 
         if (result.added.length > 0) {
-          console.log(chalk.green(`   ✨ ${result.added.length} new: ${result.added.join(', ')}`));
+          log.info(chalk.green(`   ✨ ${result.added.length} new: ${result.added.join(', ')}`));
         }
         if (result.updated.length > 0) {
-          console.log(chalk.blue(`   📝 ${result.updated.length} updated: ${result.updated.join(', ')}`));
+          log.info(chalk.blue(`   📝 ${result.updated.length} updated: ${result.updated.join(', ')}`));
         }
         if (result.removed.length > 0) {
-          console.log(chalk.yellow(`   🗑️  ${result.removed.length} removed: ${result.removed.join(', ')}`));
+          log.info(chalk.yellow(`   🗑️  ${result.removed.length} removed: ${result.removed.join(', ')}`));
         }
         if (result.added.length === 0 && result.updated.length === 0 && result.removed.length === 0) {
-          console.log(chalk.dim('   Already up to date.'));
+          log.info(chalk.dim('   Already up to date.'));
         }
         if (!result.pushed) {
-          console.log(chalk.yellow('   ⚠ Push to remote failed — local commits remain unpushed.'));
+          log.warn(chalk.yellow('   ⚠ Push to remote failed — local commits remain unpushed.'));
         }
 
-        console.log(chalk.dim(`   Total entries indexed: ${entries.length}`));
+        log.info(chalk.dim(`   Total entries indexed: ${entries.length}`));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }

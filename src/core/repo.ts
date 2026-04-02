@@ -292,11 +292,13 @@ export interface SyncResult {
   updated: string[];
   removed: string[];
   pushed: boolean;
+  pullError?: string;
 }
 
 /**
  * Sync the local brain repo with remote.
- * Returns lists of added, updated, and removed files.
+ * Pull and push are independent — a pull failure does not block push.
+ * Returns lists of added, updated, and removed files plus error details.
  */
 export async function syncBrain(config: BrainConfig): Promise<SyncResult> {
   ensureRepo(config);
@@ -304,7 +306,14 @@ export async function syncBrain(config: BrainConfig): Promise<SyncResult> {
   const entriesBefore = await scanEntries(config.local);
   const beforeIds = new Set(entriesBefore.map((e) => e.id));
 
-  const changedFiles = await pullLatest(config.local);
+  // Pull (non-blocking — failure doesn't prevent push)
+  let changedFiles: string[] = [];
+  let pullError: string | undefined;
+  try {
+    changedFiles = await pullLatest(config.local);
+  } catch (error) {
+    pullError = error instanceof Error ? error.message : String(error);
+  }
 
   const entriesAfter = await scanEntries(config.local);
   const afterIds = new Set(entriesAfter.map((e) => e.id));
@@ -332,7 +341,7 @@ export async function syncBrain(config: BrainConfig): Promise<SyncResult> {
   };
   saveConfig(updatedConfig);
 
-  // Push local commits to remote
+  // Push local commits to remote (independent of pull outcome)
   let pushed = false;
   try {
     await pushToRemote(config.local);
@@ -341,7 +350,7 @@ export async function syncBrain(config: BrainConfig): Promise<SyncResult> {
     // Push failed — local commits remain unpushed
   }
 
-  return { added, updated, removed, pushed };
+  return { added, updated, removed, pushed, pullError };
 }
 
 export interface BrainStatus {
