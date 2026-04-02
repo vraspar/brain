@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { loadConfig, getBrainDir } from '../core/config.js';
 import { createIndex, getDbPath, getEntriesWithFreshness, getAllEntries } from '../core/index-db.js';
 import { getUnpushedCommitCount } from '../utils/git.js';
+import { createLogger } from '../utils/log.js';
 import type { FreshnessLabel } from '../types.js';
 
 function getDirectorySize(dirPath: string): number {
@@ -40,6 +41,7 @@ export const statusCommand = new Command('status')
   .description('Show brain health dashboard')
   .action(async () => {
     const format = statusCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(statusCommand.parent?.opts().quiet);
 
     try {
       const config = loadConfig();
@@ -99,7 +101,7 @@ export const statusCommand = new Command('status')
           : { count: 0, noUpstream: false };
 
         if (format === 'json') {
-          console.log(JSON.stringify({
+          log.data(JSON.stringify({
             hubName: config.hubName ?? null,
             remote: config.remote ?? null,
             local: config.local,
@@ -119,24 +121,24 @@ export const statusCommand = new Command('status')
           }, null, 2));
         } else {
           const name = config.hubName ? chalk.bold.cyan(config.hubName) : chalk.bold.cyan('Brain');
-          console.log(`\n🧠 ${name}`);
-          console.log(`   ${chalk.dim('Local:')}  ${config.local} (${totalEntries} entries — ${guides} guides, ${skills} skills)`);
+          log.info(`\n🧠 ${name}`);
+          log.info(`   ${chalk.dim('Local:')}  ${config.local} (${totalEntries} entries — ${guides} guides, ${skills} skills)`);
 
           if (config.remote) {
-            console.log(`   ${chalk.dim('Remote:')} ${config.remote}`);
+            log.info(`   ${chalk.dim('Remote:')} ${config.remote}`);
           } else {
-            console.log(`   ${chalk.dim('Remote:')} ${chalk.yellow('none (local-only)')}`);
+            log.info(`   ${chalk.dim('Remote:')} ${chalk.yellow('none (local-only)')}`);
           }
 
           if (unpushedResult.noUpstream) {
-            console.log(chalk.yellow('   ⚠ No remote tracking branch — run "brain sync" to push'));
+            log.warn(chalk.yellow('   ⚠ No remote tracking branch — run "brain sync" to push'));
           } else if (unpushedResult.count > 0) {
-            console.log(chalk.yellow(`   ⚠ ${unpushedResult.count} local commit${unpushedResult.count === 1 ? '' : 's'} not yet pushed to remote`));
+            log.warn(chalk.yellow(`   ⚠ ${unpushedResult.count} local commit${unpushedResult.count === 1 ? '' : 's'} not yet pushed to remote`));
           }
 
-          console.log(`   ${chalk.dim('Author:')} ${config.author}`);
-          console.log(`   ${chalk.dim('Index:')}  ${totalEntries} entries indexed (${formatBytes(dbSize)})`);
-          console.log(`   ${chalk.dim('Repo:')}   ${formatBytes(repoSize)}`);
+          log.info(`   ${chalk.dim('Author:')} ${config.author}`);
+          log.info(`   ${chalk.dim('Index:')}  ${totalEntries} entries indexed (${formatBytes(dbSize)})`);
+          log.info(`   ${chalk.dim('Repo:')}   ${formatBytes(repoSize)}`);
 
           // Freshness
           const freshStr = freshCount > 0 ? chalk.green(`🟢 ${freshCount} Fresh`) : '';
@@ -144,22 +146,22 @@ export const statusCommand = new Command('status')
           const staleStr = staleCount > 0 ? chalk.red(`🔴 ${staleCount} Stale`) : '';
           const freshnessLine = [freshStr, agingStr, staleStr].filter(Boolean).join('  ');
           if (freshnessLine) {
-            console.log(`   ${chalk.dim('Health:')} ${freshnessLine}`);
+            log.info(`   ${chalk.dim('Health:')} ${freshnessLine}`);
           }
 
           if (archivedCount > 0) {
-            console.log(`   ${chalk.dim('Archive:')} ${archivedCount} archived entries`);
+            log.info(`   ${chalk.dim('Archive:')} ${archivedCount} archived entries`);
           }
 
           if (sourceRepos.size > 0) {
-            console.log(`   ${chalk.dim('Sources:')} ${[...sourceRepos].join(', ')}`);
+            log.info(`   ${chalk.dim('Sources:')} ${[...sourceRepos].join(', ')}`);
           }
 
           if (config.lastSync) {
-            console.log(`   ${chalk.dim('Last sync:')} ${config.lastSync}`);
+            log.info(`   ${chalk.dim('Last sync:')} ${config.lastSync}`);
           }
           if (config.lastDigest) {
-            console.log(`   ${chalk.dim('Last digest:')} ${config.lastDigest}`);
+            log.info(`   ${chalk.dim('Last digest:')} ${config.lastDigest}`);
           }
         }
       } finally {
@@ -168,9 +170,9 @@ export const statusCommand = new Command('status')
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }

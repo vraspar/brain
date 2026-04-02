@@ -14,7 +14,6 @@ import {
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
-import { extractTags } from '../utils/tags.js';
 import { extractIntelligentTags } from '../intelligence/index.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
 import { createLogger } from '../utils/log.js';

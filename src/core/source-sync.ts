@@ -9,7 +9,6 @@ import { cloneRepo, getHeadCommit, getChangedFilesSince } from '../utils/git.js'
 import { upsertSource } from './sources.js';
 import { rowToEntry, findEntryBySourcePath, type EntryRow } from './index-db.js';
 import { parseInputContent, createEntry } from './entry.js';
-import { extractTags } from '../utils/tags.js';
 import { extractIntelligentTags } from '../intelligence/index.js';
 
 export function computeContentHash(content: string): string {
