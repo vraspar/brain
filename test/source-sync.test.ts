@@ -26,27 +26,39 @@ afterEach(async () => {
 });
 
 describe('syncSource', () => {
-  it('returns empty result for non-git sources (no lastCommit)', async () => {
+  it('does full sync on first run when lastCommit is undefined', async () => {
+    // Create a local bare repo with a markdown file
+    const { simpleGit } = await import('simple-git');
+    const bareDir = path.join(tempDir, 'source.git');
+    fs.mkdirSync(bareDir);
+    await simpleGit(bareDir).init(true);
+
+    const setupDir = path.join(tempDir, 'setup');
+    await simpleGit().clone(bareDir, setupDir);
+    const git = simpleGit(setupDir);
+    await git.addConfig('user.name', 'Test');
+    await git.addConfig('user.email', 'test@test.com');
+    fs.writeFileSync(path.join(setupDir, 'doc.md'), '---\ntitle: Doc\n---\nContent.', 'utf-8');
+    await git.add('.');
+    await git.commit('Add doc');
+    await git.push('origin', 'main');
+
     const sourceConfig: SourceConfig = {
-      url: '/local/docs',
+      url: bareDir,
       lastSync: '2024-06-15T12:00:00.000Z',
-      entryCount: 3,
+      entryCount: 0,
       sourceTag: false,
     };
 
     const db = createIndex(dbPath);
     try {
-      const result = await syncSource('local-docs', sourceConfig, brainDir, db, {});
-
-      expect(result.added).toEqual([]);
-      expect(result.updated).toEqual([]);
-      expect(result.archived).toEqual([]);
-      expect(result.skippedLocalEdits).toEqual([]);
-      expect(result.unchanged).toBe(0);
+      const result = await syncSource('test-source', sourceConfig, brainDir, db, {});
+      // First sync with no lastCommit should find all files as added
+      expect(result.added.length).toBeGreaterThanOrEqual(1);
     } finally {
       db.close();
     }
-  });
+  }, 30_000);
 
   it('throws for invalid lastCommit SHA', async () => {
     const sourceConfig: SourceConfig = {
