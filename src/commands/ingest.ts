@@ -9,6 +9,7 @@ import { recordReceipt } from '../core/receipts.js';
 import { upsertSource } from '../core/sources.js';
 import { buildUsageStatsMap } from '../core/freshness.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
+import { createLogger } from '../utils/log.js';
 import type { EntryType, IngestCandidate } from '../types.js';
 
 function freshnessIcon(freshness: string): string {
@@ -17,7 +18,7 @@ function freshnessIcon(freshness: string): string {
   return '🔴';
 }
 
-function formatPreviewTable(candidates: IngestCandidate[]): void {
+function formatPreviewTable(candidates: IngestCandidate[], log: ReturnType<typeof createLogger>): void {
   const importable = candidates.filter(c => !c.skip);
   const skipped = candidates.filter(c => c.skip);
 
@@ -26,11 +27,11 @@ function formatPreviewTable(candidates: IngestCandidate[]): void {
     const tags = candidate.tags.length > 0
       ? chalk.dim(`[${candidate.tags.slice(0, 3).join(', ')}]`)
       : '';
-    console.log(`   ${icon} ${candidate.sourcePath} → "${candidate.title}" ${tags}`);
+    log.info(`   ${icon} ${candidate.sourcePath} → "${candidate.title}" ${tags}`);
   }
 
   for (const candidate of skipped) {
-    console.log(chalk.dim(`   ⏭ ${candidate.sourcePath} — ${candidate.skip!.reason}`));
+    log.info(chalk.dim(`   ⏭ ${candidate.sourcePath} — ${candidate.skip!.reason}`));
   }
 }
 
@@ -56,6 +57,7 @@ export const ingestCommand = new Command('ingest')
     shallow?: boolean;
   }) => {
     const format = ingestCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(ingestCommand.parent?.opts().quiet);
 
     try {
       const config = loadConfig();
@@ -73,13 +75,13 @@ export const ingestCommand = new Command('ingest')
       const repoName = extractRepoName(source);
 
       if (format !== 'json') {
-        console.log(chalk.dim(`🔍 Scanning ${source}...`));
+        log.info(chalk.dim(`🔍 Scanning ${source}...`));
       }
 
       const db = createIndex(getDbPath());
       try {
-        const onProgress = format !== 'json'
-          ? (msg: string) => console.log(chalk.dim(`   ${msg}`))
+        const onProgress = format !== 'json' && !log.quiet
+          ? (msg: string) => log.info(chalk.dim(`   ${msg}`))
           : undefined;
 
         const { candidates, result, headCommit } = await runIngest({
@@ -101,7 +103,7 @@ export const ingestCommand = new Command('ingest')
 
         if (options.dryRun) {
           if (format === 'json') {
-            console.log(JSON.stringify({
+            log.data(JSON.stringify({
               status: 'dry-run',
               source,
               files: candidates.map(c => ({
@@ -115,11 +117,11 @@ export const ingestCommand = new Command('ingest')
               skipped: skippedCandidates.length,
             }, null, 2));
           } else {
-            console.log('');
-            console.log(chalk.bold(`📋 Dry run — would import ${importable.length} files:`));
-            formatPreviewTable(candidates);
-            console.log('');
-            console.log(chalk.dim('No files written. Run without --dry-run to import.'));
+            log.info('');
+            log.info(chalk.bold(`📋 Dry run — would import ${importable.length} files:`));
+            formatPreviewTable(candidates, log);
+            log.info('');
+            log.info(chalk.dim('No files written. Run without --dry-run to import.'));
           }
           return;
         }
@@ -150,7 +152,7 @@ export const ingestCommand = new Command('ingest')
             );
             if (!ingestPushed && format !== 'json') {
               const reason = pushError ? `: ${pushError}` : '';
-              console.log(chalk.yellow(`   ⚠ Committed locally. Push failed${reason} — run "brain sync" to retry.`));
+              log.warn(chalk.yellow(`   ⚠ Committed locally. Push failed${reason} — run "brain sync" to retry.`));
             }
           }
         } else if (result.imported.length > 0) {
@@ -180,7 +182,7 @@ export const ingestCommand = new Command('ingest')
 
         if (format === 'json') {
           const staleCount = candidates.filter(c => !c.skip && c.freshness === 'stale').length;
-          console.log(JSON.stringify({
+          log.data(JSON.stringify({
             status: 'ingested',
             source,
             sourceRepoName: result.sourceRepoName,
@@ -190,16 +192,16 @@ export const ingestCommand = new Command('ingest')
             skippedDetails: result.skipped,
           }, null, 2));
         } else {
-          console.log('');
-          console.log(chalk.green(`✅ Ingested ${result.imported.length} entries from ${repoName}`));
+          log.info('');
+          log.success(chalk.green(`✅ Ingested ${result.imported.length} entries from ${repoName}`));
 
           if (result.skipped.length > 0) {
-            console.log(chalk.yellow(`   ⚠ ${result.skipped.length} skipped:`));
+            log.warn(chalk.yellow(`   ⚠ ${result.skipped.length} skipped:`));
             for (const s of result.skipped.slice(0, 5)) {
-              console.log(chalk.dim(`     ${s.path}: ${s.reason}`));
+              log.info(chalk.dim(`     ${s.path}: ${s.reason}`));
             }
             if (result.skipped.length > 5) {
-              console.log(chalk.dim(`     ... and ${result.skipped.length - 5} more`));
+              log.info(chalk.dim(`     ... and ${result.skipped.length - 5} more`));
             }
           }
 
@@ -208,12 +210,12 @@ export const ingestCommand = new Command('ingest')
           const importedCount = result.imported.length;
           if (importedCount > 0 && staleCount / importedCount > 0.2) {
             const pct = Math.round((staleCount / importedCount) * 100);
-            console.log('');
-            console.log(chalk.yellow(`   💡 ${pct}% of imported entries are stale. Run 'brain prune --dry-run' to review.`));
+            log.info('');
+            log.warn(chalk.yellow(`   💡 ${pct}% of imported entries are stale. Run 'brain prune --dry-run' to review.`));
           }
 
-          console.log('');
-          console.log(chalk.dim('   Run: brain digest --since 1d'));
+          log.info('');
+          log.info(chalk.dim('   Run: brain digest --since 1d'));
         }
       } finally {
         db.close();
@@ -221,9 +223,9 @@ export const ingestCommand = new Command('ingest')
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }

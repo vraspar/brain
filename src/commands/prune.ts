@@ -16,6 +16,7 @@ import { scanEntries } from '../core/entry.js';
 import { commitAndPush } from '../utils/git.js';
 import { buildUsageStatsMap } from '../core/freshness.js';
 import { freshnessIndicator } from '../core/freshness.js';
+import { createLogger } from '../utils/log.js';
 import Table from 'cli-table3';
 
 interface PruneOptions {
@@ -82,6 +83,7 @@ export const pruneCommand = new Command('prune')
   .option('--min-age <period>', 'Only prune entries older than this', '30d')
   .action(async (options: PruneOptions) => {
     const format = pruneCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(pruneCommand.parent?.opts().quiet);
 
     try {
       const config = loadConfig();
@@ -124,9 +126,9 @@ export const pruneCommand = new Command('prune')
 
         if (staleEntries.length === 0) {
           if (format === 'json') {
-            console.log(JSON.stringify({ status: 'no-stale-entries', pruned: 0 }));
+            log.data(JSON.stringify({ status: 'no-stale-entries', pruned: 0 }));
           } else {
-            console.log(chalk.green('✅ No stale entries found. Your brain is healthy!'));
+            log.success(chalk.green('✅ No stale entries found. Your brain is healthy!'));
           }
           return;
         }
@@ -149,18 +151,18 @@ export const pruneCommand = new Command('prune')
           }
 
           if (options.dryRun) {
-            console.log(chalk.bold(`\n🔍 Freshness Analysis (${candidates.length + freshEntries.length} entries)\n`));
-            console.log(chalk.bold(`Would archive ${staleEntries.length} entries:`));
+            log.info(chalk.bold(`\n🔍 Freshness Analysis (${candidates.length + freshEntries.length} entries)\n`));
+            log.info(chalk.bold(`Would archive ${staleEntries.length} entries:`));
           } else {
-            console.log(chalk.bold(`\n🔍 Found ${staleEntries.length} stale entries to archive.\n`));
+            log.info(chalk.bold(`\n🔍 Found ${staleEntries.length} stale entries to archive.\n`));
           }
-          console.log(table.toString());
+          log.data(table.toString());
         }
 
         // Dry run stops here
         if (options.dryRun) {
           if (format === 'json') {
-            console.log(JSON.stringify({
+            log.data(JSON.stringify({
               status: 'dry-run',
               wouldPrune: staleEntries.map((e) => ({
                 id: e.id,
@@ -171,7 +173,7 @@ export const pruneCommand = new Command('prune')
               count: staleEntries.length,
             }, null, 2));
           } else {
-            console.log(chalk.dim('\nNo files changed. Run without --dry-run to archive.'));
+            log.info(chalk.dim('\nNo files changed. Run without --dry-run to archive.'));
           }
           return;
         }
@@ -181,9 +183,9 @@ export const pruneCommand = new Command('prune')
           const confirmed = await confirmPrune(staleEntries.length);
           if (!confirmed) {
             if (format === 'json') {
-              console.log(JSON.stringify({ status: 'cancelled' }));
+              log.data(JSON.stringify({ status: 'cancelled' }));
             } else {
-              console.log(chalk.dim('Prune cancelled.'));
+              log.info(chalk.dim('Prune cancelled.'));
             }
             return;
           }
@@ -195,7 +197,7 @@ export const pruneCommand = new Command('prune')
           const result = archiveEntry(config.local, entry.filePath);
           archived.push(result);
           if (format !== 'json') {
-            console.log(chalk.green(`   ✅ Archived: ${entry.title} → ${result.to}`));
+            log.success(chalk.green(`   ✅ Archived: ${entry.title} → ${result.to}`));
           }
         }
 
@@ -207,7 +209,7 @@ export const pruneCommand = new Command('prune')
         } else {
           await commitAndPush(config.local, allPaths, commitMessage, { skipPush: true });
           if (format !== 'json') {
-            console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+            log.warn(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
           }
         }
 
@@ -216,13 +218,13 @@ export const pruneCommand = new Command('prune')
         rebuildIndex(db, entries);
 
         if (format === 'json') {
-          console.log(JSON.stringify({
+          log.data(JSON.stringify({
             status: 'pruned',
             archived: archived.map((a) => a.from),
             count: archived.length,
           }, null, 2));
         } else {
-          console.log(chalk.green(`\n✅ Pruned ${archived.length} entries. Run "brain list --archived" to see them.`));
+          log.success(chalk.green(`\n✅ Pruned ${archived.length} entries. Run "brain list --archived" to see them.`));
         }
       } finally {
         db.close();
@@ -230,9 +232,9 @@ export const pruneCommand = new Command('prune')
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }

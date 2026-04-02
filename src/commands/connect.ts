@@ -4,6 +4,7 @@ import { joinBrain } from '../core/repo.js';
 import { scanEntries } from '../core/entry.js';
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
+import { createLogger } from '../utils/log.js';
 
 /**
  * Shared handler for both `brain connect` and `brain join`.
@@ -15,18 +16,19 @@ export async function handleConnect(
   command: Command,
 ): Promise<void> {
   const format = command.parent?.opts().format ?? 'text';
+  const log = createLogger(command.parent?.opts().quiet);
 
   try {
     if (format !== 'json') {
-      console.log(chalk.dim('🔗 Connecting to team brain...'));
-      console.log(chalk.dim('   Cloning repository...'));
+      log.info(chalk.dim('🔗 Connecting to team brain...'));
+      log.info(chalk.dim('   Cloning repository...'));
     }
 
     const config = await joinBrain(url, options.author);
     const entries = await scanEntries(config.local);
 
     if (format !== 'json') {
-      console.log(chalk.dim('   Building search index...'));
+      log.info(chalk.dim('   Building search index...'));
     }
 
     // Build the search index
@@ -39,7 +41,7 @@ export async function handleConnect(
     }
 
     if (format === 'json') {
-      console.log(JSON.stringify({
+      log.data(JSON.stringify({
         status: 'connected',
         name: config.hubName ?? null,
         remote: config.remote,
@@ -48,21 +50,21 @@ export async function handleConnect(
         entryCount: entries.length,
       }, null, 2));
     } else {
-      console.log('');
-      console.log(chalk.green(`✅ Connected to brain: ${config.remote}`));
-      console.log(chalk.dim(`   Local:  ${config.local}`));
-      console.log(chalk.dim(`   Remote: ${config.remote}`));
-      console.log(chalk.dim(`   Author: ${config.author}`));
-      console.log(chalk.dim(`   Indexed ${entries.length} entries.`));
-      console.log('');
-      console.log(chalk.dim('   Try: brain digest'));
+      log.info('');
+      log.success(chalk.green(`✅ Connected to brain: ${config.remote}`));
+      log.info(chalk.dim(`   Local:  ${config.local}`));
+      log.info(chalk.dim(`   Remote: ${config.remote}`));
+      log.info(chalk.dim(`   Author: ${config.author}`));
+      log.info(chalk.dim(`   Indexed ${entries.length} entries.`));
+      log.info('');
+      log.info(chalk.dim('   Try: brain digest'));
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (format === 'json') {
-      console.error(JSON.stringify({ error: message }));
+      log.error(JSON.stringify({ error: message }));
     } else {
-      console.error(chalk.red(`Error: ${message}`));
+      log.error(chalk.red(`Error: ${message}`));
     }
     process.exitCode = 1;
   }

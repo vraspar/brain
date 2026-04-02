@@ -8,6 +8,7 @@ import { loadConfig } from '../core/config.js';
 import { createIndex, getDbPath, rebuildIndex } from '../core/index-db.js';
 import { scanEntries } from '../core/entry.js';
 import { commitAndPush } from '../utils/git.js';
+import { createLogger } from '../utils/log.js';
 
 /**
  * Scan the _archive/ directory for a specific entry by its ID (slug).
@@ -82,6 +83,7 @@ export const restoreCommand = new Command('restore')
   .option('--list', 'List all archived entries')
   .action(async (entryId: string | undefined, options: { force?: boolean; list?: boolean }) => {
     const format = restoreCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(restoreCommand.parent?.opts().quiet);
 
     try {
       const config = loadConfig();
@@ -91,21 +93,21 @@ export const restoreCommand = new Command('restore')
         const archived = listArchivedEntries(config.local);
         if (archived.length === 0) {
           if (format === 'json') {
-            console.log(JSON.stringify({ archived: [] }));
+            log.data(JSON.stringify({ archived: [] }));
           } else {
-            console.log(chalk.dim('No archived entries found.'));
+            log.info(chalk.dim('No archived entries found.'));
           }
           return;
         }
 
         if (format === 'json') {
-          console.log(JSON.stringify({ archived }, null, 2));
+          log.data(JSON.stringify({ archived }, null, 2));
         } else {
-          console.log(chalk.bold(`\n📦 Archived entries (${archived.length}):\n`));
+          log.data(chalk.bold(`\n📦 Archived entries (${archived.length}):\n`));
           for (const entry of archived) {
-            console.log(`  ${chalk.dim(entry.id)} — ${entry.title}`);
+            log.data(`  ${chalk.dim(entry.id)} — ${entry.title}`);
           }
-          console.log(chalk.dim('\nRun: brain restore <id> to restore an entry.'));
+          log.info(chalk.dim('\nRun: brain restore <id> to restore an entry.'));
         }
         return;
       }
@@ -136,9 +138,9 @@ export const restoreCommand = new Command('restore')
         const confirmed = await confirmRestore(title);
         if (!confirmed) {
           if (format === 'json') {
-            console.log(JSON.stringify({ status: 'cancelled' }));
+            log.data(JSON.stringify({ status: 'cancelled' }));
           } else {
-            console.log(chalk.dim('Restore cancelled.'));
+            log.info(chalk.dim('Restore cancelled.'));
           }
           return;
         }
@@ -175,7 +177,7 @@ export const restoreCommand = new Command('restore')
       } else {
         await commitAndPush(config.local, filesToCommit, commitMessage, { skipPush: true });
         if (format !== 'json') {
-          console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+          log.warn(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
         }
       }
 
@@ -189,23 +191,23 @@ export const restoreCommand = new Command('restore')
       }
 
       if (format === 'json') {
-        console.log(JSON.stringify({
+        log.data(JSON.stringify({
           status: 'restored',
           id: entryId,
           title,
           filePath: archivedPath,
         }, null, 2));
       } else {
-        console.log(chalk.green(`✅ Restored: ${title}`));
-        console.log(chalk.dim(`   ID: ${entryId}`));
-        console.log(chalk.dim(`   File: ${archivedPath}`));
+        log.success(chalk.green(`✅ Restored: ${title}`));
+        log.info(chalk.dim(`   ID: ${entryId}`));
+        log.info(chalk.dim(`   File: ${archivedPath}`));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }

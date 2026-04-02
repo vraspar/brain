@@ -15,7 +15,9 @@ import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
 import { commitAndPush } from '../utils/git.js';
 import { recordReceipt } from '../core/receipts.js';
 import { extractTags } from '../utils/tags.js';
+import { extractIntelligentTags } from '../intelligence/index.js';
 import { maybeUpdateObsidianLinks } from '../core/obsidian.js';
+import { createLogger } from '../utils/log.js';
 import type { EntryType } from '../types.js';
 
 /**
@@ -91,7 +93,7 @@ async function writeSingleEntry(
   // Resolve tags: flag > frontmatter > auto-extract
   const tags = overrides.tags
     ? overrides.tags.split(',').map((t) => t.trim()).filter(Boolean)
-    : parsed.tags ?? extractTags(parsed.content);
+    : parsed.tags ?? extractIntelligentTags(title, parsed.content);
 
   const summary = overrides.summary ?? parsed.summary ?? undefined;
 
@@ -140,6 +142,7 @@ export const pushCommand = new Command('push')
     dryRun?: boolean;
   }) => {
     const format = pushCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(pushCommand.parent?.opts().quiet);
 
     try {
       const config = loadConfig();
@@ -178,20 +181,20 @@ export const pushCommand = new Command('push')
           const typeStr = options.type ?? parsed.type ?? 'guide';
           const tags = options.tags
             ? options.tags.split(',').map((t) => t.trim()).filter(Boolean)
-            : parsed.tags ?? extractTags(parsed.content);
+            : parsed.tags ?? extractIntelligentTags(title, parsed.content);
           previews.push({ file: path.basename(fp), title, type: typeStr, tags });
         }
 
         if (format === 'json') {
-          console.log(JSON.stringify({ status: 'dry-run', entries: previews }, null, 2));
+          log.data(JSON.stringify({ status: 'dry-run', entries: previews }, null, 2));
         } else {
-          console.log(chalk.bold(`📋 Dry run — would push ${previews.length} entries:`));
+          log.info(chalk.bold(`📋 Dry run — would push ${previews.length} entries:`));
           for (const p of previews) {
             const tagStr = p.tags.length > 0 ? chalk.dim(` [${p.tags.join(', ')}]`) : '';
-            console.log(`   ${p.file} → "${p.title}" (${p.type})${tagStr}`);
+            log.info(`   ${p.file} → "${p.title}" (${p.type})${tagStr}`);
           }
-          console.log('');
-          console.log(chalk.dim('No files written. Run without --dry-run to push.'));
+          log.info('');
+          log.info(chalk.dim('No files written. Run without --dry-run to push.'));
         }
         return;
       }
@@ -207,14 +210,14 @@ export const pushCommand = new Command('push')
           results.push(result);
 
           if (format !== 'json' && filePaths.length > 1) {
-            console.log(chalk.green(`  ✅ ${result.title}`));
+            log.success(chalk.green(`  ✅ ${result.title}`));
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           errors.push({ file: filePath, error: message });
 
           if (format !== 'json' && filePaths.length > 1) {
-            console.log(chalk.red(`  ✗ ${path.basename(filePath)}: ${message}`));
+            log.warn(chalk.red(`  ✗ ${path.basename(filePath)}: ${message}`));
           } else if (filePaths.length === 1) {
             throw error;
           }
@@ -232,10 +235,10 @@ export const pushCommand = new Command('push')
         pushed = pushResult.pushed;
 
         if (skipPush && format !== 'json') {
-          console.log(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
+          log.warn(chalk.yellow('   ⚠ Committed locally (no remote configured).'));
         } else if (!skipPush && !pushed && format !== 'json') {
           const reason = pushResult.pushError ? `: ${pushResult.pushError}` : '';
-          console.log(chalk.yellow(`   ⚠ Committed locally. Push failed${reason} — run "brain sync" to retry.`));
+          log.warn(chalk.yellow(`   ⚠ Committed locally. Push failed${reason} — run "brain sync" to retry.`));
         }
       }
 
@@ -254,28 +257,28 @@ export const pushCommand = new Command('push')
         const output = results.length === 1 && errors.length === 0
           ? { status: pushStatus, ...results[0] }
           : { status: errors.length > 0 ? 'partial' : pushStatus, succeeded: results.length, failed: errors.length, entries: results, errors };
-        console.log(JSON.stringify(output, null, 2));
+        log.data(JSON.stringify(output, null, 2));
       } else if (results.length === 1 && errors.length === 0) {
         const r = results[0];
         const verb = r.isNew ? 'Created' : 'Updated';
-        console.log(chalk.green(`✅ ${verb}: ${r.title}`));
-        console.log(chalk.dim(`   ID: ${r.id}`));
-        console.log(chalk.dim(`   Type: ${r.type}`));
-        console.log(chalk.dim(`   File: ${r.filePath}`));
-        console.log(chalk.dim(`   Tags: ${r.tags.join(', ') || 'none'}`));
+        log.success(chalk.green(`✅ ${verb}: ${r.title}`));
+        log.info(chalk.dim(`   ID: ${r.id}`));
+        log.info(chalk.dim(`   Type: ${r.type}`));
+        log.info(chalk.dim(`   File: ${r.filePath}`));
+        log.info(chalk.dim(`   Tags: ${r.tags.join(', ') || 'none'}`));
       } else {
-        console.log(chalk.green(`✅ Pushed ${results.length} entries`));
+        log.success(chalk.green(`✅ Pushed ${results.length} entries`));
         if (errors.length > 0) {
-          console.log(chalk.red(`✗ ${errors.length} file(s) failed`));
+          log.warn(chalk.red(`✗ ${errors.length} file(s) failed`));
           process.exitCode = 1;
         }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }

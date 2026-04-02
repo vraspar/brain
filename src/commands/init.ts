@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { initBrain } from '../core/repo.js';
 import { scanEntries } from '../core/entry.js';
 import { createIndex, rebuildIndex, getDbPath } from '../core/index-db.js';
+import { createLogger } from '../utils/log.js';
 
 async function promptUser(question: string, hint?: string): Promise<string> {
   const rl = readline.createInterface({
@@ -30,6 +31,7 @@ export const initCommand = new Command('init')
     author?: string;
   }) => {
     const format = initCommand.parent?.opts().format ?? 'text';
+    const log = createLogger(initCommand.parent?.opts().quiet);
 
     try {
       let name = options.name;
@@ -61,7 +63,7 @@ export const initCommand = new Command('init')
 
       // Execute
       if (format !== 'json') {
-        console.log(chalk.dim(`Creating brain "${name}"...`));
+        log.info(chalk.dim(`Creating brain "${name}"...`));
       }
 
       const { config, pushFailed } = await initBrain({ name, remote, author: options.author });
@@ -80,7 +82,7 @@ export const initCommand = new Command('init')
       ensureObsidianConfig(config.local);
 
       if (format === 'json') {
-        console.log(JSON.stringify({
+        log.data(JSON.stringify({
           status: 'initialized',
           name,
           local: config.local,
@@ -89,36 +91,36 @@ export const initCommand = new Command('init')
           pushFailed,
         }, null, 2));
       } else {
-        console.log(chalk.green(`✅ Brain "${name}" is ready!${config.remote ? '' : ' (local-only)'}`));
-        console.log(chalk.dim(`   Local:  ${config.local}`));
+        log.success(chalk.green(`✅ Brain "${name}" is ready!${config.remote ? '' : ' (local-only)'}`));
+        log.info(chalk.dim(`   Local:  ${config.local}`));
         if (config.remote) {
-          console.log(chalk.dim(`   Remote: ${config.remote}`));
+          log.info(chalk.dim(`   Remote: ${config.remote}`));
         }
-        console.log(chalk.dim(`   Author: ${config.author}`));
+        log.info(chalk.dim(`   Author: ${config.author}`));
 
         if (pushFailed) {
-          console.log('');
-          console.log(chalk.yellow(`   ⚠ Created locally but failed to push to remote. Run "brain sync" to retry.`));
+          log.info('');
+          log.warn(chalk.yellow(`   ⚠ Created locally but failed to push to remote. Run "brain sync" to retry.`));
         } else if (config.remote) {
-          console.log('');
-          console.log(chalk.bold('   📋 Share this with your team:'));
-          console.log(chalk.cyan(`      brain connect ${config.remote}`));
+          log.info('');
+          log.info(chalk.bold('   📋 Share this with your team:'));
+          log.info(chalk.cyan(`      brain connect ${config.remote}`));
         } else {
-          console.log('');
-          console.log(chalk.yellow('   ⚠ No remote configured. Knowledge stays on this machine.'));
+          log.info('');
+          log.warn(chalk.yellow('   ⚠ No remote configured. Knowledge stays on this machine.'));
         }
 
-        console.log('');
-        console.log(chalk.dim('   Next steps:'));
-        console.log(chalk.dim('     brain push --title "My First Guide" --file ./guide.md'));
-        console.log(chalk.dim('     brain digest'));
+        log.info('');
+        log.info(chalk.dim('   Next steps:'));
+        log.info(chalk.dim('     brain push --title "My First Guide" --file ./guide.md'));
+        log.info(chalk.dim('     brain digest'));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (format === 'json') {
-        console.error(JSON.stringify({ error: message }));
+        log.error(JSON.stringify({ error: message }));
       } else {
-        console.error(chalk.red(`Error: ${message}`));
+        log.error(chalk.red(`Error: ${message}`));
       }
       process.exitCode = 1;
     }
