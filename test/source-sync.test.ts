@@ -26,7 +26,28 @@ afterEach(async () => {
 });
 
 describe('syncSource', () => {
-  it('does full sync on first run when lastCommit is undefined', async () => {
+  it('returns empty for non-git local sources without lastCommit', async () => {
+    const sourceConfig: SourceConfig = {
+      url: '/local/docs',
+      lastSync: '2024-06-15T12:00:00.000Z',
+      entryCount: 3,
+      sourceTag: false,
+    };
+
+    const db = createIndex(dbPath);
+    try {
+      const result = await syncSource('local-docs', sourceConfig, brainDir, db, {});
+      expect(result.added).toEqual([]);
+      expect(result.updated).toEqual([]);
+      expect(result.archived).toEqual([]);
+      expect(result.skippedLocalEdits).toEqual([]);
+      expect(result.unchanged).toBe(0);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('does full sync on first run when lastCommit is undefined for git source', async () => {
     // Create a local bare repo with a markdown file
     const { simpleGit } = await import('simple-git');
     const bareDir = path.join(tempDir, 'source.git');
